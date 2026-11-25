@@ -1,0 +1,1351 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PINNs na Prática</title>
+<style>
+:root{
+  --bg:#f6f5f1; --card:#ffffff; --ink:#1d1d1b; --ink2:#5b5b57; --line:#e3e1da; --soft:#efede6;
+  --real:#3a3a38; --mlp:#e07a2f; --pinn:#14966b; --reg:#3466d6; --warn:#c0392b;
+  --future:rgba(240,180,60,.13); --futureInk:#a86f0a;
+  --accent:#14966b; --accentSoft:#e3f4ec; --mlpSoft:#fcefe4; --regSoft:#e7eefc;
+  --violet:#7b4fd6; --violetSoft:#efe9fb; --warnSoft:#fbe9e7;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151614; --card:#1e201d; --ink:#ecebe6; --ink2:#a5a49e; --line:#33352f; --soft:#262824;
+  --real:#d9d8d2; --mlp:#f0934a; --pinn:#3cc994; --reg:#6f97f0; --warn:#ef6b5b;
+  --future:rgba(240,180,60,.10); --futureInk:#e0b050;
+  --accent:#3cc994; --accentSoft:#1b3229; --mlpSoft:#3a2a1d; --regSoft:#1e2944;
+  --violet:#a48af0; --violetSoft:#2a2342; --warnSoft:#3a211e;
+  --shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:#151614; --card:#1e201d; --ink:#ecebe6; --ink2:#a5a49e; --line:#33352f; --soft:#262824;
+  --real:#d9d8d2; --mlp:#f0934a; --pinn:#3cc994; --reg:#6f97f0; --warn:#ef6b5b;
+  --future:rgba(240,180,60,.10); --futureInk:#e0b050;
+  --accent:#3cc994; --accentSoft:#1b3229; --mlpSoft:#3a2a1d; --regSoft:#1e2944;
+  --violet:#a48af0; --violetSoft:#2a2342; --warnSoft:#3a211e;
+  --shadow:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{overflow-x:hidden}
+h1,h2,h3{line-height:1.2;margin:0 0 .5em}
+h1{font-size:clamp(28px,5vw,46px);letter-spacing:-.02em}
+h2{font-size:clamp(22px,3.4vw,32px);letter-spacing:-.01em}
+h3{font-size:18px}
+p{margin:.4em 0 .9em}
+b,strong{font-weight:650}
+.wrap{max-width:1060px;margin:0 auto;padding:0 16px}
+/* nav */
+header{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.nav{display:flex;gap:6px;align-items:center;padding:10px 16px;max-width:1060px;margin:0 auto;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.brand{font-weight:700;margin-right:8px;white-space:nowrap}
+.brand span{color:var(--accent)}
+.tab{border:0;background:transparent;color:var(--ink2);padding:7px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:14px;white-space:nowrap}
+.tab:hover{background:var(--soft);color:var(--ink)}
+.tab.on{background:var(--ink);color:var(--bg)}
+.theme{margin-left:auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 10px;cursor:pointer;font-size:14px}
+.progress{height:3px;background:var(--accent);width:0;transition:width .3s}
+/* sections */
+section.page{display:none;padding:32px 0 60px;animation:fade .35s ease}
+section.page.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.kicker{display:inline-block;font-size:13px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.lead{font-size:18px;color:var(--ink2);max-width:760px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow);margin:18px 0}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}
+.answer{border-left:5px solid var(--accent);background:var(--accentSoft);border-radius:12px;padding:16px 18px;margin:18px 0;font-size:17px}
+.answer .lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);display:block;margin-bottom:4px}
+.note{font-size:14px;color:var(--ink2)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:3px 10px;border-radius:999px;background:var(--soft);color:var(--ink2)}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.legend{display:flex;flex-wrap:wrap;gap:8px 14px;font-size:13px;color:var(--ink2);margin:6px 0 4px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:18px;height:3px;border-radius:2px;display:inline-block}
+canvas{width:100%;display:block;border-radius:10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+button.b{font:inherit;font-size:15px;border-radius:10px;padding:9px 16px;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+button.b:hover{border-color:var(--ink2)}
+button.b.primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+button.b:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;background:var(--soft);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{font:inherit;font-size:14px;border:0;background:transparent;color:var(--ink2);padding:6px 12px;border-radius:8px;cursor:pointer}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.ctrl{margin:12px 0}
+.ctrl label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:5px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px}
+.stat{background:var(--soft);border-radius:12px;padding:10px 12px}
+.stat .k{font-size:12px;color:var(--ink2)}
+.stat .v{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.verdict{margin-top:10px;padding:10px 14px;border-radius:10px;background:var(--soft);font-size:15px}
+.sim-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.tag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--ink);color:var(--bg);letter-spacing:.04em}
+.navbtns{display:flex;justify-content:space-between;gap:10px;margin-top:28px}
+/* hero */
+.hero{padding:30px 0 10px}
+.qcard{cursor:pointer;transition:transform .15s,border-color .15s;margin:0}
+.qcard:hover{transform:translateY(-2px);border-color:var(--accent)}
+.qnum{font-size:13px;font-weight:700;color:var(--accent)}
+.qcard h3{margin:4px 0 6px}
+.qcard p{margin:0;color:var(--ink2);font-size:15px}
+/* analogy */
+.students{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.student{border-radius:12px;padding:14px;border:1px solid var(--line)}
+.student.a{background:var(--mlpSoft)}
+.student.b{background:var(--accentSoft)}
+.student .who{font-weight:700}
+.big-emoji{font-size:30px}
+/* formula */
+.formula{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;font-size:18px;font-weight:600;margin:14px 0}
+.chip{padding:8px 14px;border-radius:10px;cursor:pointer;border:2px solid transparent}
+.chip.d{background:var(--mlpSoft);color:var(--mlp)}
+.chip.p{background:var(--accentSoft);color:var(--pinn)}
+.chip.l{background:var(--regSoft);color:var(--reg);font-size:20px;padding:6px 14px}
+.chip.on{border-color:currentColor}
+.flow{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:14px 0}
+.step{background:var(--soft);border-radius:12px;padding:12px;font-size:14px;position:relative}
+.step .n{width:24px;height:24px;border-radius:50%;background:var(--ink);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;margin-bottom:6px}
+.lossbars{display:grid;gap:8px;margin-top:10px}
+.lb{display:grid;grid-template-columns:150px 1fr 70px;align-items:center;gap:8px;font-size:13px}
+.lb .track{height:10px;background:var(--soft);border-radius:6px;overflow:hidden}
+.lb .fill{height:100%;width:0;border-radius:6px;transition:width .1s}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:15px}
+td,th{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--ink2);font-weight:600}
+.scen{display:flex;flex-wrap:wrap;gap:8px}
+.scen button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px 12px;cursor:pointer;text-align:left}
+.scen button.on{border-color:var(--accent);background:var(--accentSoft)}
+/* diagramas de arquitetura (SVG) */
+.viz{margin-top:12px;background:var(--soft);border-radius:14px;padding:14px 14px 10px;overflow-x:auto}
+.viz svg.dg{display:block;width:100%;min-width:440px;max-width:640px;height:auto;margin:0 auto}
+.dg text{font:12px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;fill:var(--ink2);text-anchor:middle}
+.dg text.t{font-weight:700;font-size:13px}
+.dg text.nl{fill:var(--ink);font-weight:600}
+.dg text.s{font-size:11px}
+.dg .c-in{fill:var(--reg)}.dg .c-hid{fill:var(--mlp)}.dg .c-out{fill:var(--pinn)}.dg .c-err{fill:var(--warn)}.dg .c-vio{fill:var(--violet)}.dg .c-ink{fill:var(--ink)}
+.dg .in{fill:var(--regSoft);stroke:var(--reg);stroke-width:2}
+.dg .hid{fill:var(--mlpSoft);stroke:var(--mlp);stroke-width:2}
+.dg .out{fill:var(--accentSoft);stroke:var(--pinn);stroke-width:2}
+.dg .vio{fill:var(--violetSoft);stroke:var(--violet);stroke-width:2}
+.dg .err{fill:var(--warnSoft);stroke:var(--warn);stroke-width:2}
+.dg .e{stroke:var(--ink2);stroke-opacity:.38;stroke-width:1.2}
+.dg .flow{stroke-dasharray:4 6;animation:dgflow 1.4s linear infinite}
+.dg .ar{fill:none;stroke-width:2.2}
+.dg .ar-in{stroke:var(--reg)}.dg .ar-hid{stroke:var(--mlp)}.dg .ar-out{stroke:var(--pinn)}.dg .ar-err{stroke:var(--warn)}.dg .ar-vio{stroke:var(--violet)}.dg .ar-ink{stroke:var(--ink2)}
+.mk-in{fill:var(--reg)}.mk-hid{fill:var(--mlp)}.mk-out{fill:var(--pinn)}.mk-err{fill:var(--warn)}.mk-vio{fill:var(--violet)}.mk-ink{fill:var(--ink2)}
+.dg .dash{stroke-dasharray:7 5}
+.dg .dash.anim{animation:dgflow2 1.2s linear infinite}
+@keyframes dgflow{to{stroke-dashoffset:-20}}
+@keyframes dgflow2{to{stroke-dashoffset:-24}}
+.dg .axis{stroke:var(--ink2);stroke-width:1.5}
+.dg .px{fill:var(--reg)}.dg .pxbg{fill:var(--regSoft);stroke:var(--reg);stroke-width:2}.dg .pxg{stroke:var(--reg);stroke-opacity:.12;stroke-width:.8}
+.dg .fm{fill:var(--mlp)}.dg .pl{fill:var(--violet)}
+.dg .fade{transition:opacity .3s}
+.dg .cur{stroke-width:4}
+.dg .bgin{fill:var(--regSoft);opacity:.7}.dg .bgout{fill:var(--accentSoft);opacity:.7}
+.dglegend{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:center;font-size:13px;color:var(--ink2);margin-top:10px}
+.dglegend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-1px;margin-right:5px;border:2px solid}
+.dglegend i.ln{width:20px;height:0;border-radius:0;border-width:2px 0 0;border-style:dashed;vertical-align:3px}
+.howto{font-size:14px;color:var(--ink2);margin:10px 0 0}
+.howto ol{margin:4px 0 0;padding-left:22px}
+@media (prefers-reduced-motion:reduce){.dg .flow,.dg .dash.anim{animation:none}}
+@media (max-width:520px){.viz::before{content:"↔ arraste para o lado para ver o desenho inteiro";display:block;font-size:12px;color:var(--ink2);text-align:center;margin-bottom:6px}}
+.rec{margin-top:12px;padding:14px;border-radius:12px;background:var(--soft);min-height:60px}
+/* decision tree */
+.tree .q{font-size:18px;font-weight:600;margin-bottom:10px}
+.tree .path{font-size:13px;color:var(--ink2);margin-bottom:10px;min-height:20px}
+.result{padding:16px;border-radius:12px;background:var(--accentSoft);border-left:5px solid var(--accent)}
+/* quiz */
+.quiz .item{border-top:1px solid var(--line);padding:14px 0}
+.quiz .item:first-child{border-top:0}
+.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.opts button{font:inherit;font-size:15px;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 12px;cursor:pointer}
+.opts button.ok{border-color:var(--pinn);background:var(--accentSoft)}
+.opts button.no{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--card))}
+.fb{font-size:14px;color:var(--ink2);margin-top:6px}
+.check li{margin:6px 0}
+ul{padding-left:20px}
+.limits .card{margin:0}
+.actc{display:flex;flex-direction:column;gap:4px}
+.duel{background:var(--soft);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px}
+.duel h4{margin:0;font-size:16px}
+.duel .sub{font-size:13px;color:var(--ink2)}
+.duel canvas{border-radius:8px}
+.rank{display:flex;flex-direction:column;gap:4px;font-size:14px}
+.rank div{display:flex;justify-content:space-between;gap:8px;padding:4px 8px;border-radius:8px;background:var(--card)}
+.rank div.win{outline:2px solid currentColor;font-weight:700}
+.duel .why{font-size:13px;color:var(--ink2)}
+.duel .crown{font-size:13px;font-weight:700;padding:3px 10px;border-radius:999px;align-self:flex-start;color:#fff}
+/* ajuda */
+.help{width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--ink2);font:600 13px system-ui;cursor:pointer;padding:0;margin-left:6px;vertical-align:middle;line-height:1}
+.help:hover{color:var(--ink);border-color:var(--ink2)}
+#helpBox{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+#helpBox.on{display:flex}
+#helpBox .panel{background:var(--card);color:var(--ink);border-radius:16px;max-width:560px;width:100%;padding:20px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25);max-height:85vh;overflow:auto}
+#helpBox h4{margin:0 0 8px;font-size:18px}
+#helpBox ul{margin:6px 0 10px}
+#helpBox .close{float:right}
+/* matemática */
+details.math{margin-top:16px;border:1px dashed var(--line);border-radius:12px;padding:8px 14px}
+details.math summary{cursor:pointer;font-weight:600;color:var(--ink2);font-size:14px}
+details.math[open] summary{margin-bottom:8px}
+.eq{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;text-align:center;padding:10px;margin:8px 0;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:normal;line-height:1.8}
+.eq i{font-style:italic}
+details.math h5{margin:12px 0 2px;font-size:14px}
+details.math p{font-size:14px;color:var(--ink2);margin:4px 0}
+.funnel{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.fstep{display:grid;grid-template-columns:44px 1fr auto minmax(150px,auto);align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--soft);border-left:5px solid var(--c);cursor:pointer;transition:transform .15s}
+.fstep:hover{transform:translateX(3px)}
+.fstep .fic{font-size:26px;text-align:center}
+.fstep .fyes{font-size:12px;font-weight:700;color:var(--ink2);letter-spacing:.05em}
+.fstep .fuse{font-weight:700;color:var(--c);padding:6px 12px;border-radius:999px;background:var(--card);border:2px solid var(--c);text-align:center;font-size:14px}
+.fstep .fex{grid-column:2/-1;display:none;font-size:14px;color:var(--ink2)}
+.fstep.open .fex{display:block}
+.fstep.final{background:var(--accentSoft)}
+@media (max-width:620px){.fstep{grid-template-columns:36px 1fr}.fstep .fyes{display:none}.fstep .fuse{grid-column:2}}
+.actc canvas{border-radius:10px;margin-bottom:4px}
+.limits .ico{font-size:24px}
+footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
+.kbd{font-size:12px;border:1px solid var(--line);border-radius:5px;padding:1px 6px;background:var(--card)}
+@media (max-width:620px){
+  .students{grid-template-columns:1fr}
+  .lb{grid-template-columns:110px 1fr 56px}
+  .card{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="nav" id="nav">
+    <div class="brand">PINN<span>•</span>G</div>
+    <button class="tab" data-go="0">Início</button>
+    <button class="tab" data-go="1">1 · A ideia</button>
+    <button class="tab" data-go="2">2 · Q24 Arquitetura</button>
+    <button class="tab" data-go="3">3 · Q25 Limites</button>
+    <button class="tab" data-go="4">4 · Q26 Quando não usar</button>
+    <button class="tab" data-go="5">5 · Resumo e quiz</button>
+    <button class="theme" id="themeBtn" title="Trocar tema">◐</button>
+  </div>
+  <div class="progress" id="progress"></div>
+</header>
+
+<main class="wrap">
+
+<!-- ================= 0 INÍCIO ================= -->
+<section class="page" id="p0">
+  <div class="hero">
+    <span class="kicker">UEL · Redes Neurais I · Grupo G</span>
+    <h1>Redes neurais que <span style="color:var(--pinn)">conhecem a física</span></h1>
+    <p class="lead">Vamos responder três perguntas sobre redes neurais com experimentos simples de física: uma <b>mola que balança</b>, um <b>café esfriando</b> e um <b>carrinho andando</b>. Tudo aqui roda de verdade no seu navegador — as redes treinam na sua frente.</p>
+    <canvas id="heroSpring" height="110" aria-label="Animação de uma massa presa a uma mola balançando"></canvas>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card qcard" data-go="2"><div class="qnum">Questão 24</div><h3>Como escolher a arquitetura?</h3><p>Resposta curta: a <b>menor</b> rede que tem o <b>"jeito" certo</b> do problema.</p></div>
+    <div class="card qcard" data-go="3"><div class="qnum">Questão 25</div><h3>Quais os limites das redes?</h3><p>Resposta curta: <b>fora dos dados, elas chutam</b>. A física ajuda — mas não faz milagre.</p></div>
+    <div class="card qcard" data-go="4"><div class="qnum">Questão 26</div><h3>Quando NÃO usar rede neural?</h3><p>Resposta curta: quando <b>algo mais simples</b> resolve igual ou melhor.</p></div>
+  </div>
+  <div class="btns" style="margin-top:22px"><button class="b primary" data-go="1">Começar →</button></div>
+  <p class="note">Integrantes: Guilherme Costanzi · Guilherme Braga · Rafael Cobo &nbsp;·&nbsp; Navegue com <span class="kbd">←</span> <span class="kbd">→</span></p>
+</section>
+
+<!-- ================= 1 A IDEIA ================= -->
+<section class="page" id="p1">
+  <span class="kicker">Parte 1 · A ideia</span>
+  <h2>O que é uma PINN, em 1 minuto</h2>
+  <p class="lead">PINN = <i>Physics-Informed Neural Network</i>, ou <b>rede neural informada pela física</b>. É uma rede comum que, além de olhar os dados, também é cobrada por obedecer a uma lei da física.</p>
+
+  <div class="card">
+    <h3>Uma analogia</h3>
+    <p>Dois alunos estudam só os exercícios de 1 a 6. Na prova cai o exercício 8.</p>
+    <div class="students">
+      <div class="student a"><div class="big-emoji">📝</div><div class="who" style="color:var(--mlp)">Aluno A — decora as respostas</div>Vai bem nos exercícios que viu. No 8, chuta.<br><b>= rede neural comum</b></div>
+      <div class="student b"><div class="big-emoji">💡</div><div class="who" style="color:var(--pinn)">Aluno B — aprende a regra</div>Usa os exercícios <i>e</i> a fórmula. No 8, aplica a regra.<br><b>= PINN</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🔬 Simulação: quem prevê o futuro da mola?</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Uma massa presa a uma mola balança e vai perdendo força. Temos <b>sensores só até 6 s</b>. De 6 a 10 s ninguém mediu nada — as redes precisam <b>adivinhar</b>.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--real)"></i>Movimento real</span>
+      <span><i class="dot" style="background:var(--real)"></i>Sensores</span>
+      <span><i class="sw" style="background:var(--mlp)"></i>Rede comum (só dados)</span>
+      <span><i class="sw" style="background:var(--pinn)"></i>PINN (dados + física)</span>
+    </div>
+    <canvas id="oscChart" height="300"></canvas>
+    <canvas id="oscSprings" height="150" style="margin-top:8px"></canvas>
+    <div class="btns">
+      <button class="b primary" id="oscTrain">▶ Treinar as duas redes</button>
+      <button class="b" id="oscPlay" disabled>▶ Ver as molas se movendo</button>
+      <button class="b" id="oscNew">↺ Novos sensores</button>
+    </div>
+    <div class="ctrl"><label>Quantos sensores (entre 0 e 6 s)?</label>
+      <div class="seg" id="oscN"><button data-v="6">6</button><button data-v="15" class="on">15</button><button data-v="40">40</button></div></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Treino</div><div class="v" id="oscEp">0</div></div>
+      <div class="stat"><div class="k">Erro no futuro · rede comum</div><div class="v" id="oscE1" style="color:var(--mlp)">—</div></div>
+      <div class="stat"><div class="k">Erro no futuro · PINN</div><div class="v" id="oscE2" style="color:var(--pinn)">—</div></div>
+    </div>
+    <div class="verdict" id="oscVerdict">Clique em <b>Treinar</b> e observe a região amarela (o "futuro").</div>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🤔 E se colocarmos mais sensores? A rede não deveria melhorar?</h3><span class="tag">EXPERIMENTO</span></div>
+    <p class="note">Parece estranho: com 40 sensores a rede comum às vezes erra o futuro <b>mais</b> do que com 15. Vamos testar 4 situações de uma vez — cada uma treina as duas redes do zero.</p>
+    <div class="grid g2" style="align-items:center">
+      <div>
+        <canvas id="sensBars" height="260"></canvas>
+        <div class="legend"><span><i class="dot" style="background:var(--mlp)"></i>Rede comum</span><span><i class="dot" style="background:var(--pinn)"></i>PINN</span></div>
+        <p class="note" style="margin:6px 0 0"><b>Eixo vertical:</b> o erro de cada rede no "futuro" (6 a 10 s), ou seja, quanto, em média, a posição prevista ficou longe da posição real da massa. <b>Quanto mais baixa a barra, melhor.</b> A escala pula de 10 em 10 vezes: cada linha de grade é um erro 10× menor que a de cima (1 → 0,1 → 0,01).</p>
+      </div>
+      <div>
+        <canvas id="sensMini" height="230"></canvas>
+        <p class="note" id="sensMiniLbl" style="text-align:center;margin:4px 0">Passe o mouse ou toque numa barra para ver as curvas</p>
+      </div>
+    </div>
+    <div class="btns"><button class="b primary" id="sensRun">▶ Rodar as 4 situações</button><span class="note" id="sensProg" style="align-self:center"></span></div>
+    <div class="grid g2" style="margin-top:6px">
+      <div class="rec"><b>📍 O que importa é ONDE estão os sensores, não quantos.</b><br>Nos três primeiros casos todos os sensores estão entre 0 e 6 s. Colocar mais pontos <b>no mesmo trecho</b> não ensina nada sobre o que acontece depois de 6 s. Quando espalhamos só 15 sensores até 10 s (último grupo), a rede comum acerta — não sobra futuro para adivinhar.</div>
+      <div class="rec"><b>🎲 Por que às vezes piora?</b><br>Depois do último sensor, a rede comum fica <b>livre</b>: nada na conta do erro diz o que ela deve fazer ali. O que ela desenha no futuro é praticamente <b>sorte</b> — depende do sorteio inicial e de como ela se ajustou aos pontos (e ao ruído) do passado. Mais pontos mudam esse "desenho livre", para melhor ou para pior.</div>
+      <div class="rec"><b>📏 E o "Erro nos sensores" da PINN que não chega a zero?</b><br>Isso é <b>bom</b>. Os sensores têm ruído (pequenos erros de medição). A rede comum tenta passar exatamente por cada ponto — decora o ruído. A PINN prefere obedecer à física e passa <b>perto</b> dos pontos, não exatamente neles.</div>
+      <div class="rec"><b>✅ E a PINN?</b><br>Fica boa em todos os casos, porque a equação da mola vale em <b>todo</b> o tempo, inclusive onde não há sensor. Para ela, os sensores só "confirmam" a regra.</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Como a PINN aprende? Uma conta com duas partes</h3>
+    <p>Toda rede aprende diminuindo um <b>erro</b> (a <i>loss</i>). A PINN só muda a conta do erro:</p>
+    <div class="formula">
+      <span>Erro total =</span>
+      <span class="chip d on" data-chip="d">Erro nos sensores</span>
+      <span>+</span>
+      <span class="chip l" data-chip="l">λ</span>
+      <span>×</span>
+      <span class="chip p" data-chip="p">Erro na equação física</span>
+    </div>
+    <div class="rec" id="chipTxt"></div>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><b>Entra o tempo t</b><br>A rede recebe um instante qualquer.</div>
+      <div class="step"><div class="n">2</div><b>Sai a posição x(t)</b><br>É o "chute" da rede.</div>
+      <div class="step"><div class="n">3</div><b>Calcula velocidade e aceleração</b><br>Derivadas exatas, feitas pelo próprio computador (<i>diferenciação automática</i>).</div>
+      <div class="step"><div class="n">4</div><b>Confere a física</b><br>Aceleração + atrito + mola deu zero? Se não, é erro.</div>
+    </div>
+    <p class="note">Durante o treino acima, as barras mostram as duas partes do erro da PINN caindo:</p>
+    <div class="lossbars">
+      <div class="lb"><span>Erro nos sensores</span><div class="track"><div class="fill" id="lbD" style="background:var(--mlp)"></div></div><span id="lbDv" class="note">—</span></div>
+      <div class="lb"><span>Erro na equação</span><div class="track"><div class="fill" id="lbP" style="background:var(--pinn)"></div></div><span id="lbPv" class="note">—</span></div>
+    </div>
+    <details class="math">
+      <summary>📐 Ver a matemática por trás (opcional)</summary>
+      <h5>0. A forma geral de uma PINN</h5>
+      <p>Qualquer lei física pode ser escrita como "uma conta com a função e suas derivadas que deve dar zero". Chamando essa conta de 𝒩 e as regras de início/borda de ℬ:</p>
+      <div class="eq">𝒩[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;no domínio, &nbsp;&nbsp;&nbsp; ℬ[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;nas condições iniciais e de contorno</div>
+      <p>A PINN troca a solução desconhecida <i>u</i> por uma rede neural <i>u</i><sub>θ</sub> e treina minimizando:</p>
+      <div class="eq">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i><sub>d</sub>) Σ |<i>u</i><sub>θ</sub>(<i>x<sub>i</sub></i>, <i>t<sub>i</sub></i>) − <i>u<sub>i</sub></i>|²</span> + <span style="color:var(--reg)">λ<sub>r</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>r</sub>) Σ |𝒩[<i>u</i><sub>θ</sub>](<i>x<sub>j</sub></i>, <i>t<sub>j</sub></i>)|²</span> + <span style="color:var(--reg)">λ<sub>b</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>b</sub>) Σ |ℬ[<i>u</i><sub>θ</sub>](<i>x<sub>k</sub></i>, <i>t<sub>k</sub></i>)|²</span></div>
+      <p><span style="color:var(--mlp)">dados</span> + <span style="color:var(--pinn)">equação nos pontos de colocação</span> + <span style="color:var(--pinn)">condições iniciais/de contorno</span>, com pesos <span style="color:var(--reg)">λ</span>. As derivadas dentro de 𝒩 vêm da diferenciação automática. Essa é a formulação de Raissi, Perdikaris e Karniadakis (2019). Nos nossos exemplos só há tempo (sem <i>x</i>), então <i>u</i><sub>θ</sub> = x̂(<i>t</i>) e usamos um único λ para a física e as condições iniciais — veja os itens abaixo.</p>
+      <h5>1. A rede neural</h5>
+      <p>Uma camada oculta com <i>H</i> neurônios. Recebe o tempo <i>t</i> e devolve a previsão x̂(<i>t</i>):</p>
+      <div class="eq">x̂(<i>t</i>) = <i>d</i> + Σ<sub><i>k</i>=1…<i>H</i></sub> <i>a<sub>k</sub></i> · σ(<i>w<sub>k</sub></i> <i>t</i> + <i>b<sub>k</sub></i>)</div>
+      <p>σ é a função de ativação (tanh, ReLU ou seno). Os parâmetros θ = {<i>a<sub>k</sub></i>, <i>w<sub>k</sub></i>, <i>b<sub>k</sub></i>, <i>d</i>} são ajustados no treino (3<i>H</i> + 1 números).</p>
+      <h5>2. A <i>loss</i> nos nossos exemplos</h5>
+      <div class="eq">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i>) Σ<sub><i>i</i></sub> [x̂(<i>t<sub>i</sub></i>) − <i>x<sub>i</sub></i>]²</span> + <span style="color:var(--reg)">λ</span> · <span style="color:var(--pinn)">{ (1/<i>M</i>) Σ<sub><i>j</i></sub> <i>r</i>(τ<sub><i>j</i></sub>)² + [x̂(0) − <i>x</i><sub>0</sub>]² + [x̂′(0) − <i>v</i><sub>0</sub>]² }</span></div>
+      <p><span style="color:var(--mlp)">Laranja</span>: erro nos <i>N</i> sensores. <span style="color:var(--pinn)">Verde</span>: erro na equação nos <i>M</i> pontos de colocação τ<sub><i>j</i></sub> + condições iniciais. A rede comum usa só a parte laranja (λ = 0).</p>
+      <h5>3. O resíduo <i>r</i> de cada problema (a lei física "igualada a zero")</h5>
+      <div class="eq">Mola: <i>r</i> = x̂″ + 2ζω x̂′ + ω² x̂ &nbsp;&nbsp;(ζ = 0,1; ω = 1,5)</div>
+      <div class="eq">Café: <i>r</i> = T̂′ + <i>k</i> (T̂ − <i>T</i><sub>amb</sub>) &nbsp;&nbsp;(<i>k</i> = 0,35; <i>T</i><sub>amb</sub> = 20 °C)</div>
+      <div class="eq">Carrinho: <i>r</i> = x̂′ − <i>v</i></div>
+      <h5>4. As derivadas da rede (diferenciação automática)</h5>
+      <div class="eq">x̂′(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i> σ′(·) &nbsp;&nbsp;&nbsp; x̂″(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i>² σ″(·)</div>
+      <p>Com tanh: σ′ = 1 − tanh², σ″ = −2 tanh (1 − tanh²). Com ReLU: σ″ = 0 em todo lugar — por isso ela não serve para a mola.</p>
+      <h5>5. Treino</h5>
+      <div class="eq">θ ← θ − η · Adam(∇<sub>θ</sub> L) &nbsp;&nbsp;(η = <i>learning rate</i>, 0,01 a 0,02)</div>
+      <p>A cada passo, calculamos como cada parâmetro afeta o erro (o gradiente) e damos um pequeno passo para diminuí-lo.</p>
+      <h5>6. Como medimos o erro nos cartões</h5>
+      <div class="eq">RMSE = √{ (1/<i>n</i>) Σ [x̂(<i>t</i>) − <i>x</i><sub>real</sub>(<i>t</i>)]² }</div>
+      <p>"Quanto, em média, a previsão ficou longe da realidade", calculado só no trecho indicado (por exemplo, 6–10 s).</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🎚️ O que é esse λ (lambda)?</h3><span class="tag">AO VIVO</span></div>
+    <p>O <b>λ</b> é só um número que diz <b>quanto a física pesa</b> na conta do erro. Pense numa balança: de um lado, "passar perto dos sensores"; do outro, "obedecer à equação".</p>
+    <div class="grid g2" style="align-items:center">
+      <canvas id="lamScale" height="170"></canvas>
+      <ul style="margin:0">
+        <li><b>λ = 0</b> → a física não conta. A PINN vira uma <b>rede comum</b>.</li>
+        <li><b>λ pequeno</b> → a física é só uma "dica".</li>
+        <li><b>λ grande</b> → a rede obedece à equação <b>mesmo que discorde dos sensores</b>.</li>
+      </ul>
+    </div>
+    <p class="note" style="margin-top:12px">Teste abaixo. Primeiro com a equação <b>certa</b>; depois com uma equação <b>errada</b> (fingimos que a mola é 30% mais dura do que ela é de verdade).</p>
+    <div class="grid g2">
+      <div class="ctrl"><label>Peso da física (λ)</label><div class="seg" id="lamVal"><button data-v="0">0</button><button data-v="0.01">0,01</button><button data-v="1" class="on">1</button><button data-v="100">100</button></div></div>
+      <div class="ctrl"><label>A equação dada à PINN está…</label><div class="seg" id="lamEq"><button data-v="ok" class="on">✅ certa</button><button data-v="bad">⚠️ errada (mola 30% mais dura)</button></div></div>
+    </div>
+    <div class="legend"><span><i class="sw" style="background:var(--real)"></i>Movimento real</span><span><i class="dot" style="background:var(--real)"></i>Sensores</span><span><i class="sw" style="background:var(--pinn)"></i>PINN</span><span><i class="sw" style="background:var(--warn)"></i>O que a equação errada prevê</span></div>
+    <canvas id="lamChart" height="240"></canvas>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro onde há sensores (0–6 s)</div><div class="v" id="lamE0">—</div></div>
+      <div class="stat"><div class="k">Erro no futuro (6–10 s)</div><div class="v" id="lamE1" style="color:var(--pinn)">—</div></div>
+    </div>
+    <div class="verdict" id="lamTxt">Treinando…</div>
+    <div class="answer" style="margin-bottom:0"><span class="lbl">Como escolher λ na prática</span>Não existe valor mágico. Comece com <b>λ = 1</b>, teste também <b>0,1</b> e <b>10</b>, e fique com o que der menor erro em <b>sensores separados</b> que a rede não usou no treino (validação). Confia muito na equação? λ maior. A equação é aproximada? λ menor.</div>
+  </div>
+
+  <div class="card">
+    <h3>🤷 Se já temos a equação, por que não usar só ela?</h3>
+    <p>Pergunta justa. A equação da mola tem solução pronta: x(<i>t</i>) = <i>A</i>·e<sup>−ζω<i>t</i></sup>·cos(ω<sub>d</sub><i>t</i> + φ). Mas, para usá-la <b>sozinha</b>, é preciso saber <b>tudo</b> com exatidão: a lei certa, os parâmetros (ζ, ω), a posição e a velocidade iniciais. A linha vermelha pontilhada no teste do λ acima é justamente "só a física" com uma mola 30% mais dura: ela erra o tempo todo, e nenhum sensor consegue corrigi-la. Já a PINN com λ = 0,01 usa a mesma equação errada e <b>erra bem menos</b>, porque os dados puxam a curva de volta.</p>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))">
+      <div class="rec"><b>⚠️ A equação quase nunca está perfeita.</b><br>Atrito que ninguém modelou, um material que não é bem o do livro, um coeficiente medido com erro. Usando só a física, esses erros vão direto para a resposta. Na PINN, a física é uma <b>regra forte</b>, mas os sensores ainda podem corrigi-la.</div>
+      <div class="rec"><b>❓ Os parâmetros costumam ser desconhecidos.</b><br>Não sabemos o atrito ζ da mola nem o <i>k</i> da xícara de café. A PINN pode tratar esses números como <b>parâmetros treináveis</b> e descobri-los a partir dos sensores (o chamado <i>problema inverso</i>). A fórmula sozinha precisa recebê-los prontos.</div>
+      <div class="rec"><b>🧩 Faltam informações para o solver rodar.</b><br>Um solver clássico (Runge-Kutta, elementos finitos) exige o problema <b>completo</b>: todas as condições iniciais e de contorno. Na prática, muitas vezes temos só alguns sensores espalhados no meio do domínio. O solver não sabe usar isso; a PINN usa sensores e equação <b>na mesma conta</b>.</div>
+      <div class="rec"><b>🌀 A maioria das equações não tem fórmula pronta.</b><br>A mola é um exemplo de brinquedo. Escoamento de fluidos, calor em peças complexas e ondas em 3D não têm solução escrita à mão. A rede vira uma <b>função contínua e derivável</b> que aproxima a solução sem precisar de malha, e responde em qualquer ponto depois de treinada.</div>
+    </div>
+    <div class="answer" style="margin-bottom:0"><span class="lbl">Resumindo</span>A física sozinha só ganha quando sabemos <b>tudo</b> sobre o sistema. A rede sozinha só ganha quando temos <b>muitos dados</b>. A PINN fica no meio: <b>física aproximada + poucos dados</b>, um cobrindo a falha do outro. E se de fato sabemos tudo, a fórmula ou o solver são a melhor escolha. Isso é a Questão 26.</div>
+  </div>
+  <div class="navbtns"><button class="b" data-go="0">← Início</button><button class="b primary" data-go="2">Questão 24 →</button></div>
+</section>
+
+<!-- ================= 2 Q24 ================= -->
+<section class="page" id="p2">
+  <span class="kicker">Parte 2 · Questão 24</span>
+  <h2>Como escolher a arquitetura da rede?</h2>
+  <div class="answer"><span class="lbl">Resposta</span>Escolha a <b>menor</b> rede capaz de resolver o problema, com as <b>peças certas</b> para aquele tipo de dado. Isso é a <b>Navalha de Ockham</b>: entre duas soluções que funcionam, fique com a mais simples.</div>
+  <p class="lead">Na prática, são três perguntas:</p>
+
+  <div class="card">
+    <h3>① Que tipo de dado eu tenho?</h3>
+    <p class="note">Cada formato de dado tem uma arquitetura que "combina" com ele. Clique num cenário:</p>
+    <div class="scen" id="scen">
+      <button data-s="0">📈 Pontos que formam uma reta</button>
+      <button data-s="1">🖼️ Fotos / imagens</button>
+      <button data-s="2">💬 Texto ou série no tempo</button>
+      <button data-s="3">🌀 Poucos dados + lei física conhecida</button>
+      <button data-s="4">❓ Muitos dados, sem lei conhecida</button>
+      <button data-s="5">🗜️ Comprimir ou limpar dados</button>
+    </div>
+    <div class="rec" id="scenTxt">Escolha um cenário acima.</div>
+    <div class="viz" id="scenViz"></div>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>② Qual o tamanho certo? 🔬</h3><span class="tag">INTERATIVO</span></div>
+    <p class="note">Arraste para aumentar a <b>complexidade do modelo</b> (número de parâmetros). Os pontos <b>cheios</b> foram usados no treino; os <b>vazados</b> são dados novos, que o modelo nunca viu.</p>
+    <canvas id="polyChart" height="280"></canvas>
+    <div class="ctrl"><label>Complexidade: <span id="polyLbl">3</span> parâmetros</label><input type="range" id="polyDeg" min="1" max="13" value="2"></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro nos dados de treino</div><div class="v" id="polyTr">—</div></div>
+      <div class="stat"><div class="k">Erro em dados novos</div><div class="v" id="polyTe">—</div></div>
+    </div>
+    <div class="verdict" id="polyVerdict"></div>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>②b Na prática: como achar o tamanho certo? (não é no chute!) 🔬</h3><span class="tag">AO VIVO</span></div>
+    <p>Existe uma receita simples, usada no mundo todo. A ideia é <b>testar</b> e medir o erro em dados que a rede <b>não viu</b>:</p>
+    <div class="flow">
+      <div class="step"><div class="n">1</div><b>Separe os dados</b><br>Uma parte para treinar (<b>treino</b>), outra só para conferir (<b>validação</b>).</div>
+      <div class="step"><div class="n">2</div><b>Comece pequeno</b><br>Treine uma rede com 1 neurônio.</div>
+      <div class="step"><div class="n">3</div><b>Aumente aos poucos</b><br>2, 4, 8, 16… treinando de novo cada uma.</div>
+      <div class="step"><div class="n">4</div><b>Olhe a validação</b><br>Quando o erro dela para de cair (ou sobe), pare.</div>
+      <div class="step"><div class="n">5</div><b>Fique com a menor</b><br>A menor rede que chegou perto (até 10%) do melhor resultado. Isso é Ockham!</div>
+    </div>
+    <p class="note">Vamos fazer isso agora num sinal curvo com ruído: 27 pontos de <b>treino</b> (cheios) e 13 de <b>validação</b> (vazados).</p>
+    <div class="grid g2">
+      <div><canvas id="sizeErr" height="250"></canvas>
+        <div class="legend"><span><i class="sw" style="background:var(--ink2)"></i>erro no treino</span><span><i class="sw" style="background:var(--reg)"></i>erro na validação</span><span><i class="dot" style="background:var(--pinn)"></i>escolhida</span></div></div>
+      <div><canvas id="sizeFit" height="250"></canvas><p class="note" id="sizeFitLbl" style="text-align:center;margin:4px 0">—</p></div>
+    </div>
+    <div class="btns"><button class="b primary" id="sizeRun">▶ Rodar a busca do tamanho</button><span class="note" id="sizeProg" style="align-self:center"></span></div>
+    <div class="verdict" id="sizeTxt">Clique para treinar redes de 1 a 128 neurônios, uma de cada vez.</div>
+    <p class="note" style="margin-top:10px">💡 Fizemos o mesmo com a PINN da mola: com 1 a 4 neurônios ela errava muito (~0,2); com <b>8 neurônios</b> o erro no futuro caiu para ~0,01, quase o mesmo que com 64 (~0,006) — mas a de 64 levava ~6× mais tempo para treinar. Até aqui só mudamos a <b>largura</b> (neurônios numa camada). O outro "tamanho" da rede é a <b>profundidade</b> (quantas camadas) — veja o ②c abaixo.</p>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>②c Largura ou profundidade? As camadas 🔬</h3><span class="tag">INTERATIVO</span></div>
+    <p>Uma rede neural é como uma <b>linha de montagem</b>: o dado entra, passa por algumas estações (as <b>camadas</b>) e sai a resposta. Cada estação pega o trabalho da anterior e melhora um pouco. Com o mesmo número de neurônios, dá para montar a rede de dois jeitos:</p>
+    <div class="viz" id="layWideDeep"></div>
+    <div class="grid g2" style="margin-top:12px">
+      <div class="rec"><b style="color:var(--mlp)">↕️ Rede larga</b> = muitos neurônios <b>lado a lado</b>, numa camada só.<br>Cada neurônio desenha uma pecinha e a rede <b>soma</b> tudo no final. Foi o que testamos no ②b.</div>
+      <div class="rec"><b style="color:var(--pinn)">↔️ Rede funda</b> = poucos neurônios por camada, mas <b>muitas camadas</b>.<br>Cada camada trabalha <b>em cima</b> do resultado da anterior, como peças montadas com outras peças.</div>
+    </div>
+
+    <h3 style="margin-top:24px">📄 Por que empilhar camadas ajuda? Dobre um papel</h3>
+    <p>Pegue uma folha e dobre ao meio: ela fica com <b>2</b> partes. Dobre de novo: <b>4</b>. De novo: <b>8</b>. Cada dobra <b>dobra</b> o número de partes. No teste abaixo, cada camada tem só <b>2 neurônios</b> e faz exatamente isso com a curva. Arraste e conte os "pedaços de reta".</p>
+    <div class="grid g2" style="align-items:center">
+      <canvas id="layNet" height="200"></canvas>
+      <div><canvas id="layFold" height="220"></canvas>
+        <div class="legend"><span><i class="sw" style="background:var(--warn)"></i>Curva com todas as camadas</span><span><i class="sw" style="background:var(--ink2)"></i>Com uma camada a menos</span></div></div>
+    </div>
+    <div class="ctrl"><label>Camadas (dobras): <b id="layLbl">3</b></label><input type="range" id="layL" min="1" max="8" value="3"></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Pedaços de reta na curva</div><div class="v" id="layP">—</div></div>
+      <div class="stat"><div class="k">Neurônios · empilhando camadas</div><div class="v" id="layD" style="color:var(--pinn)">—</div></div>
+      <div class="stat"><div class="k">Neurônios · tudo numa camada só</div><div class="v" id="layS" style="color:var(--mlp)">—</div></div>
+    </div>
+    <div class="verdict" id="layTxt"></div>
+
+    <h3 style="margin-top:24px">🔎 Cada camada enxerga um nível de detalhe</h3>
+    <p class="note">Numa rede que reconhece rostos em fotos, as camadas se dividem o trabalho, do mais simples ao mais completo:</p>
+    <div class="viz" id="layLevels"></div>
+    <p class="note" style="margin-top:8px">Ninguém programa isso: as camadas aprendem a se dividir sozinhas durante o treino. É por isso que redes de imagem e de texto têm <b>dezenas</b> de camadas.</p>
+
+    <div class="grid" style="margin-top:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))">
+      <div class="rec"><b>🧮 Uma camada só dá conta… se for bem larga.</b><br>Já foi provado que <b>uma</b> camada, com neurônios suficientes, consegue imitar qualquer curva. O problema é o "suficientes": como no papel, às vezes são <b>muitos</b>.</div>
+      <div class="rec"><b>💸 Mas cada camada tem um custo.</b><br>• <b>Mais números para ajustar:</b> com 32 neurônios, 1 camada tem 97; 4 camadas têm 3.265.<br>• <b>Mais difícil de treinar:</b> o recado de "como corrigir o erro" volta camada por camada (o <i>backpropagation</i>) e vai enfraquecendo, como num <b>telefone sem fio</b>.<br>• <b>Na PINN, mais lento ainda:</b> ela calcula velocidade e aceleração atravessando todas as camadas.</div>
+      <div class="rec"><b>🧪 E na prática?</b><br>Na mola e no café, <b>1 camada basta</b>: a entrada é só o tempo e a curva é simples. Problemas reais com espaço <i>e</i> tempo (água escoando, calor numa peça) costumam usar de <b>3 a 9 camadas</b>.</div>
+    </div>
+    <div class="answer" style="margin-bottom:0"><span class="lbl">Regra simples</span>Comece com <b>1 ou 2 camadas</b>. Se o erro na validação ainda estiver alto, <b>acrescente uma camada</b> e compare. Quando parar de melhorar, pare. Fique com a <b>menor</b> rede que funciona — a mesma ideia do ②b.</div>
+    <details class="math">
+      <summary>📐 Detalhes técnicos (opcional)</summary>
+      <h5>Por que uma camada basta em teoria</h5>
+      <p><i>Teorema da Aproximação Universal</i> (Cybenko, 1989; Hornik, 1991): uma rede com uma camada oculta e neurônios suficientes aproxima qualquer função contínua num intervalo fechado, com o erro que se quiser.</p>
+      <h5>A conta do papel dobrado</h5>
+      <p>Cada camada aplica o "chapéu" <i>h</i>(<i>x</i>) = 2·ReLU(<i>x</i>) − 4·ReLU(<i>x</i> − ½), que usa 2 neurônios. Aplicar <i>L</i> vezes dá uma curva com 2<sup><i>L</i></sup> pedaços usando 2<i>L</i> neurônios. Numa camada só, cada neurônio cria no máximo uma dobra, então são precisos 2<sup><i>L</i></sup> neurônios (Telgarsky, 2016).</p>
+      <h5>Número de parâmetros</h5>
+      <div class="eq">entrada 1 → <i>L</i> camadas de <i>H</i> neurônios → saída 1: &nbsp; 3<i>H</i> + 1 + (<i>L</i> − 1)·<i>H</i>(<i>H</i> + 1)</div>
+      <h5>O "telefone sem fio" (<i>vanishing gradient</i>)</h5>
+      <p>No <i>backpropagation</i>, o gradiente de cada camada é um produto de derivadas das camadas seguintes. Com tanh, cada fator tem módulo ≤ 1, então o produto pode encolher muito e as primeiras camadas aprendem devagar. Inicialização Xavier/Glorot e <i>residual connections</i> (<i>skip connections</i>) ajudam.</p>
+      <h5>Arquiteturas no artigo original das PINNs</h5>
+      <p>Raissi, Perdikaris e Karniadakis (2019): Burgers e Navier-Stokes com 9 camadas × 20 neurônios; Schrödinger com 5 × 100; todas com tanh.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <h3>③ As peças certas: a função de ativação</h3>
+    <p>Cada neurônio desenha uma <b>forma simples</b>. A rede monta a curva final <b>somando</b> várias dessas formas, como peças de Lego. A <b>função de ativação</b> é o formato da peça:</p>
+    <div class="grid g3" id="actShapes">
+      <div class="actc"><canvas height="110" data-act="relu"></canvas><b>ReLU</b><span class="note">Uma "dobra": reta e depois outra reta. Soma de ReLUs = curva feita de <b>pedaços de reta</b>.</span></div>
+      <div class="actc"><canvas height="110" data-act="tanh"></canvas><b>tanh</b><span class="note">Um "degrau suave". Soma de tanh = curva <b>lisa</b>, sem quinas.</span></div>
+      <div class="actc"><canvas height="110" data-act="sin"></canvas><b>seno</b><span class="note">Uma "onda". Soma de senos = curva que <b>já nasce ondulando</b>.</span></div>
+    </div>
+    <div class="rec" style="margin-top:14px">🔑 <b>Por que isso importa para a PINN?</b> A equação da mola fala de <b>aceleração</b> (o quanto a curva "entorta"). Uma curva feita de pedaços de reta <b>não entorta</b>: em cada pedaço a aceleração é zero. Então uma PINN com ReLU não consegue nem "enxergar" a equação.</div>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🔬 Teste: a mesma PINN da mola, trocando só a ativação</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Mesmos sensores, mesmo tamanho (32 neurônios), mesma equação, mesmo λ. Só muda a peça.</p>
+    <div class="legend"><span><i class="sw" style="background:var(--real)"></i>Movimento real</span><span><i class="sw" style="background:var(--warn)"></i>ReLU</span><span><i class="sw" style="background:var(--reg)"></i>tanh</span><span><i class="sw" style="background:var(--pinn)"></i>seno</span></div>
+    <canvas id="actChart" height="260"></canvas>
+    <div class="btns"><button class="b primary" id="actRun">▶ Treinar as três</button><span class="note" id="actProg" style="align-self:center"></span></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro total · ReLU</div><div class="v" id="actE0" style="color:var(--warn)">—</div></div>
+      <div class="stat"><div class="k">Erro total · tanh</div><div class="v" id="actE1" style="color:var(--reg)">—</div></div>
+      <div class="stat"><div class="k">Erro total · seno</div><div class="v" id="actE2" style="color:var(--pinn)">—</div></div>
+    </div>
+    <div class="verdict" id="actTxt">Clique em <b>Treinar</b>.</div>
+  </div>
+
+  <div class="card">
+    <h3>📋 Como escolher a ativação na prática</h3>
+    <p class="note">Não precisa decorar teoria. Na prática, usa-se uma "tabela de bolso":</p>
+    <table>
+      <tr><th>Situação</th><th>Use</th><th>Por quê</th></tr>
+      <tr><td>Caso geral: imagens, tabelas, classificação</td><td><span class="pill" style="background:var(--warn);color:#fff">ReLU</span></td><td>Rápida, simples, padrão do mercado. Não precisa de derivadas.</td></tr>
+      <tr><td>PINN (a equação usa derivadas)</td><td><span class="pill" style="background:var(--reg);color:#fff">tanh</span></td><td>Lisa: tem velocidade, aceleração… de qualquer ordem. É o padrão em PINNs.</td></tr>
+      <tr><td>PINN de algo que oscila (molas, ondas)</td><td><span class="pill" style="background:var(--pinn);color:#fff">seno</span></td><td>A peça já tem formato de onda: aprende mais fácil.</td></tr>
+      <tr><td colspan="3" class="note" style="padding-top:14px"><b>Última camada (a saída)</b> — escolhida pelo tipo de resposta:</td></tr>
+      <tr><td>Prever um número (posição, temperatura)</td><td><span class="pill">nenhuma (linear)</span></td><td>Não limita o valor da saída. É o que usamos aqui.</td></tr>
+      <tr><td>Sim ou não (ex.: tem doença?)</td><td><span class="pill">sigmoide</span></td><td>Dá uma probabilidade entre 0 e 1.</td></tr>
+      <tr><td>Várias classes (gato, cão, pássaro)</td><td><span class="pill">softmax</span></td><td>Dá probabilidades que somam 100%.</td></tr>
+    </table>
+    <div class="answer" style="margin-bottom:0"><span class="lbl">Regra de ouro</span>Comece pelo padrão (<b>ReLU</b> em geral, <b>tanh</b> em PINN). Na dúvida, treine com 2 ou 3 opções e fique com a de <b>menor erro na validação</b> — exatamente como no teste acima.</div>
+  </div>
+
+  <div class="card">
+    <h3>Resumo da Q24 em uma tabela</h3>
+    <table>
+      <tr><th>Pergunta</th><th>No nosso exemplo (mola)</th></tr>
+      <tr><td>Tipo de dado?</td><td>Poucos sensores + lei física conhecida → <b>PINN</b></td></tr>
+      <tr><td>Tamanho?</td><td>Achado <b>testando</b> (receita ②b): <b>largura</b> de 8 a 32 neurônios e <b>profundidade</b> de 1 camada já bastam. Mais camadas (②c) só valem em problemas mais complexos, como os de espaço + tempo. Maior só custa mais.</td></tr>
+      <tr><td>Peças certas?</td><td>Ativação <b>tanh</b> (suave) + <b>equação física</b> na conta do erro</td></tr>
+    </table>
+    <p class="note" style="margin-top:10px">💡 No oscilador, o que reduziu o erro <b>não foi</b> aumentar a rede — foi dar a ela as peças certas (física + função suave).</p>
+  </div>
+  <div class="navbtns"><button class="b" data-go="1">← A ideia</button><button class="b primary" data-go="3">Questão 25 →</button></div>
+</section>
+
+<!-- ================= 3 Q25 ================= -->
+<section class="page" id="p3">
+  <span class="kicker">Parte 3 · Questão 25</span>
+  <h2>Quais os limites das redes neurais?</h2>
+  <div class="answer"><span class="lbl">Resposta</span>Uma rede aprende bem <b>onde viu dados</b>. Fora deles ela não sabe nada — só repete a tendência, mesmo que dê algo <b>impossível</b>. Além disso: precisa de muitos dados, custa caro para treinar e é difícil de explicar ("caixa-preta").</div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🔬 Simulação: o café esfriando</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Um café a <b>90 °C</b> esfria numa sala a <b>20 °C</b>. Medimos só os primeiros minutos. Pela física, ele <b>nunca</b> fica mais frio que a sala. Será que as redes sabem disso?</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--real)"></i>Temperatura real</span>
+      <span><i class="dot" style="background:var(--real)"></i>Sensores</span>
+      <span><i class="sw" style="background:var(--mlp)"></i>Rede comum</span>
+      <span><i class="sw" style="background:var(--pinn)"></i>PINN (lei do resfriamento de Newton)</span>
+    </div>
+    <canvas id="coolChart" height="300"></canvas>
+    <div class="grid g2">
+      <div class="ctrl"><label>Sensores até quantos minutos?</label>
+        <div class="seg" id="coolUntil"><button data-v="2">2 min</button><button data-v="4" class="on">4 min</button><button data-v="7">7 min</button></div></div>
+      <div class="ctrl"><label>Peso da física (λ) na PINN</label>
+        <div class="seg" id="coolLam"><button data-v="0">0 (sem física)</button><button data-v="0.05">0,05</button><button data-v="1" class="on">1</button><button data-v="10">10</button></div></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro no futuro · rede comum</div><div class="v" id="coolE1" style="color:var(--mlp)">—</div></div>
+      <div class="stat"><div class="k">Erro no futuro · PINN</div><div class="v" id="coolE2" style="color:var(--pinn)">—</div></div>
+      <div class="stat"><div class="k">Tempo de treino · comum</div><div class="v" id="coolT1">—</div></div>
+      <div class="stat"><div class="k">Tempo de treino · PINN</div><div class="v" id="coolT2">—</div></div>
+    </div>
+    <div class="verdict" id="coolVerdict">Treinando…</div>
+    <p class="note">Experimente: com <b>λ = 0</b> a PINN vira uma rede comum. E repare: mesmo com sensores até 7 min, a rede comum continua errando cerca de 12 °C — mais tempo de dados não substitui a regra física.</p>
+    <details class="math"><summary>📐 Ver a equação usada (opcional)</summary>
+      <p>Lei do resfriamento de Newton: a temperatura cai mais rápido quanto mais longe ela está da sala.</p>
+      <div class="eq">d<i>T</i>/d<i>t</i> = −<i>k</i> (<i>T</i> − <i>T</i><sub>amb</sub>) &nbsp;&nbsp;⇒&nbsp;&nbsp; <i>T</i>(<i>t</i>) = <i>T</i><sub>amb</sub> + (<i>T</i><sub>0</sub> − <i>T</i><sub>amb</sub>) e<sup>−<i>kt</i></sup></div>
+      <p><i>k</i> = 0,35 /min, <i>T</i><sub>0</sub> = 90 °C, <i>T</i><sub>amb</sub> = 20 °C. A PINN recebe o resíduo <i>r</i> = T̂′ + <i>k</i>(T̂ − 20) em 60 pontos de 0 a 12 min.</p>
+    </details>
+  </div>
+
+  <h3 style="margin-top:28px">Os limites, um por um</h3>
+  <div class="grid g2 limits">
+    <div class="card"><div class="ico">🔭</div><h3>1. Não sabe extrapolar</h3><p>Fora dos dados, a rede comum só continua a tendência (viu no café: passou abaixo de 20 °C). <b>A PINN melhora isso</b>, porque a equação vale em todo o tempo.</p></div>
+    <div class="card"><div class="ico">📦</div><h3>2. Precisa de muitos dados</h3><p>Sem física, a rede só sabe o que os dados mostram. Na mola, com 6 sensores, a rede comum erra muito mais. <b>A PINN usa a equação como "dados extras"</b>.</p></div>
+    <div class="card"><div class="ico">⏱️</div><h3>3. Treino é caro</h3><p>A PINN calcula derivadas em centenas de pontos a cada passo — veja o tempo acima: ela é <b>mais lenta</b> que a rede comum.</p></div>
+    <div class="card"><div class="ico">🎛️</div><h3>4. Sensível a ajustes</h3><p>O peso λ, o tamanho e o sorteio inicial mudam o resultado. Teste λ = 0,05 acima: a física fica fraca demais.</p></div>
+    <div class="card"><div class="ico">⚠️</div><h3>5. Depende da equação estar certa</h3><p>Se a lei física estiver errada, a PINN aprende o erro junto. Veremos isso na Questão 26.</p></div>
+    <div class="card"><div class="ico">❔</div><h3>6. Caixa-preta</h3><p>Os pesos da rede não têm significado direto. É difícil explicar <i>por que</i> ela deu aquele número.</p></div>
+  </div>
+  <div class="navbtns"><button class="b" data-go="2">← Questão 24</button><button class="b primary" data-go="4">Questão 26 →</button></div>
+</section>
+
+<!-- ================= 4 Q26 ================= -->
+<section class="page" id="p4">
+  <span class="kicker">Parte 4 · Questão 26</span>
+  <h2>Quando NÃO usar rede neural?</h2>
+  <div class="answer"><span class="lbl">Resposta</span>Quando um método <b>clássico e simples</b> (uma reta, uma fórmula, um solver numérico) resolve com erro igual ou menor, <b>mais rápido</b> e de forma <b>explicável</b>. E também quando a física que você daria à PINN <b>está errada</b>.</div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🏆 Três problemas, três vencedores</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Colocamos as três ferramentas — <b style="color:var(--mlp)">rede comum</b>, <b style="color:var(--pinn)">PINN</b> e <b style="color:var(--reg)">regressão linear</b> — para disputar o mesmo problema, três vezes. Não existe uma ferramenta que sempre ganha.</p>
+    <div class="legend"><span><i class="sw" style="background:var(--real)"></i>Real</span><span><i class="dot" style="background:var(--real)"></i>Sensores</span><span><i class="sw" style="background:var(--mlp)"></i>Rede comum</span><span><i class="sw" style="background:var(--pinn)"></i>PINN</span><span><i class="sw" style="background:var(--reg)"></i>Regressão</span></div>
+    <div class="grid g3" id="duels"></div>
+    <div class="btns"><button class="b primary" id="duelRun">▶ Rodar os 3 duelos</button><span class="note" id="duelProg" style="align-self:center"></span></div>
+  </div>
+
+  <h3 style="margin-top:28px">Olhando mais de perto</h3>
+  <div class="card">
+    <div class="sim-head"><h3>🔬 Simulação: o carrinho em linha reta</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Um carrinho anda a <b>2,0 m/s</b> constantes. Temos 8 medições com ruído até 5 s. Comparamos uma <b>regressão linear</b> (uma reta, 2 números) com uma <b>PINN</b> que recebeu uma velocidade <b>que você escolhe</b>.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--real)"></i>Posição real</span>
+      <span><i class="dot" style="background:var(--real)"></i>Sensores</span>
+      <span><i class="sw" style="background:var(--reg)"></i>Regressão linear</span>
+      <span><i class="sw" style="background:var(--pinn)"></i>PINN</span>
+    </div>
+    <canvas id="carChart" height="260"></canvas>
+    <canvas id="carTrack" height="130" style="margin-top:8px"></canvas>
+    <div class="ctrl"><label>Velocidade que a PINN acha que o carrinho tem: <b id="vLbl">1,3</b> m/s <span class="note">(a real é 2,0)</span></label>
+      <input type="range" id="vPinn" min="1" max="3" step="0.1" value="1.3"></div>
+    <div class="btns"><button class="b" id="carPlay">▶ Ver os carrinhos andando</button></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro no futuro · regressão</div><div class="v" id="carE1" style="color:var(--reg)">—</div></div>
+      <div class="stat"><div class="k">Erro no futuro · PINN</div><div class="v" id="carE2" style="color:var(--pinn)">—</div></div>
+      <div class="stat"><div class="k">Parâmetros · tempo (regressão)</div><div class="v" id="carP1">2</div></div>
+      <div class="stat"><div class="k">Parâmetros · tempo (PINN)</div><div class="v" id="carP2">37</div></div>
+    </div>
+    <div class="verdict" id="carVerdict"></div>
+    <details class="math"><summary>📐 Ver as equações (opcional)</summary>
+      <p><b>Regressão linear</b> (mínimos quadrados): acha a reta que passa mais perto dos pontos, com uma conta direta, sem treino.</p>
+      <div class="eq">x̂(<i>t</i>) = β<sub>0</sub> + β<sub>1</sub> <i>t</i>, &nbsp; β<sub>1</sub> = Σ(<i>t<sub>i</sub></i> − <i>t̄</i>)(<i>x<sub>i</sub></i> − <i>x̄</i>) / Σ(<i>t<sub>i</sub></i> − <i>t̄</i>)², &nbsp; β<sub>0</sub> = <i>x̄</i> − β<sub>1</sub> <i>t̄</i></div>
+      <p><b>PINN</b>: rede de 12 neurônios, com resíduo <i>r</i> = x̂′ − <i>v</i><sub>PINN</sub> e λ = 2. Se <i>v</i><sub>PINN</sub> ≠ 2,0 m/s, a física dada a ela está errada.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <div class="sim-head"><h3>🔬 E quando a rede comum é a melhor?</h3><span class="tag">AO VIVO</span></div>
+    <p class="note">Um sinal curvo e complicado, <b>sem lei física conhecida</b>, mas com <b>muitos sensores</b> espalhados. A reta não consegue curvar, e uma PINN com uma física "inventada" (sinal constante) fica presa nela.</p>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--real)"></i>Sinal real</span>
+      <span><i class="sw" style="background:var(--mlp)"></i>Rede comum</span>
+      <span><i class="sw" style="background:var(--reg)"></i>Regressão linear</span>
+      <span><i class="sw" style="background:var(--pinn)"></i>PINN com física errada</span>
+    </div>
+    <canvas id="sigChart" height="260"></canvas>
+    <div class="btns"><button class="b primary" id="sigTrain">▶ Treinar</button></div>
+    <div class="stats">
+      <div class="stat"><div class="k">Erro · rede comum</div><div class="v" id="sigE1" style="color:var(--mlp)">—</div></div>
+      <div class="stat"><div class="k">Erro · regressão</div><div class="v" id="sigE2" style="color:var(--reg)">—</div></div>
+      <div class="stat"><div class="k">Erro · PINN errada</div><div class="v" id="sigE3" style="color:var(--pinn)">—</div></div>
+    </div>
+    <p class="note" style="margin-top:10px">Moral: <b>cada ferramenta tem seu lugar</b>. Rede comum = muitos dados, sem lei. PINN = poucos dados, lei confiável. Regressão = problema simples.</p>
+  </div>
+
+  <div class="card">
+    <h3>🚦 Antes de usar uma rede neural, passe por estes 5 sinais</h3>
+    <p class="note">Se algum responder <b>SIM</b>, pare ali: existe algo mais simples. Clique num sinal para ver um exemplo.</p>
+    <div class="funnel" id="funnel">
+      <div class="fstep" style="--c:var(--reg)"><div class="fic">🧾</div><div class="fq">Já existe uma <b>fórmula</b> pronta?</div><div class="fyes">SIM →</div><div class="fuse">Use a fórmula</div><div class="fex">Ex.: carrinho com velocidade conhecida → x = x₀ + v·t. Zero treino, zero erro de modelo.</div></div>
+      <div class="fstep" style="--c:var(--reg)"><div class="fic">📈</div><div class="fq">Uma <b>reta</b> ou um polinômio resolve?</div><div class="fyes">SIM →</div><div class="fuse">Regressão</div><div class="fex">Ex.: nosso carrinho. 2 parâmetros, menos de 0,1 ms, e venceu a PINN.</div></div>
+      <div class="fstep" style="--c:var(--mlp)"><div class="fic">🧮</div><div class="fq">Só quero <b>resolver</b> uma equação conhecida?</div><div class="fyes">SIM →</div><div class="fuse">Solver numérico</div><div class="fex">Ex.: simular a mola sabendo tudo dela. Runge-Kutta resolve em milissegundos, com precisão garantida.</div></div>
+      <div class="fstep" style="--c:var(--futureInk)"><div class="fic">🔍</div><div class="fq">Preciso <b>explicar</b> cada decisão?</div><div class="fyes">SIM →</div><div class="fuse">Modelo interpretável</div><div class="fex">Ex.: banco negando crédito, diagnóstico médico. Árvore de decisão ou regressão mostram o "porquê".</div></div>
+      <div class="fstep" style="--c:var(--warn)"><div class="fic">📦</div><div class="fq"><b>Poucos dados</b> e <b>nenhuma</b> lei física?</div><div class="fyes">SIM →</div><div class="fuse">Colete mais dados</div><div class="fex">Nenhuma rede faz milagre: sem dados e sem regra, ela só chuta.</div></div>
+      <div class="fstep final" style="--c:var(--pinn)"><div class="fic">🧠</div><div class="fq">Passou por todos com <b>NÃO</b>?</div><div class="fyes">ENTÃO →</div><div class="fuse">Rede neural! (ou PINN, se houver lei física)</div><div class="fex">Problema complexo, sem fórmula simples, com dados ou física suficientes: aí a rede neural brilha.</div></div>
+    </div>
+  </div>
+  <div class="navbtns"><button class="b" data-go="3">← Questão 25</button><button class="b primary" data-go="5">Resumo →</button></div>
+</section>
+
+<!-- ================= 5 RESUMO ================= -->
+<section class="page" id="p5">
+  <span class="kicker">Parte 5 · Resumo</span>
+  <h2>As três respostas, juntas</h2>
+  <div class="grid g3">
+    <div class="card" style="margin:0"><div class="qnum">Q24 · Arquitetura</div><p>A <b>menor</b> rede com as <b>peças certas</b> (tipo de dado, ativação suave, física na perda). Ockham: o simples que funciona vence.</p></div>
+    <div class="card" style="margin:0"><div class="qnum">Q25 · Limites</div><p>Redes <b>chutam fora dos dados</b>, precisam de muitos dados, custam caro e são caixa-preta. A PINN reduz o 1º e o 2º, mas depende da equação certa.</p></div>
+    <div class="card" style="margin:0"><div class="qnum">Q26 · Quando não usar</div><p>Quando <b>reta, fórmula ou solver</b> resolvem igual ou melhor — ou quando a física disponível está <b>errada</b>.</p></div>
+  </div>
+
+  <div class="card tree" id="tree">
+    <div class="sim-head"><h3>🧭 Qual método usar? Responda e descubra</h3><button class="b" id="treeReset">↺ Recomeçar</button></div>
+    <div class="path" id="treePath"></div>
+    <div id="treeBody"></div>
+  </div>
+
+  <div class="card">
+    <h3>Os números das nossas simulações</h3>
+    <table id="sumTable">
+      <tr><th>Caso</th><th>Vencedor</th><th>Por quê</th></tr>
+      <tr><td>🌀 Mola (poucos sensores)</td><td style="color:var(--pinn)"><b>PINN</b></td><td>A equação guia a rede no futuro.</td></tr>
+      <tr><td>☕ Café esfriando</td><td style="color:var(--pinn)"><b>PINN</b></td><td>A física impede temperatura abaixo da sala.</td></tr>
+      <tr><td>🚗 Carrinho em linha reta</td><td style="color:var(--reg)"><b>Regressão</b></td><td>2 parâmetros bastam; a PINN sofre com a física errada.</td></tr>
+      <tr><td>〰️ Sinal sem lei, muitos dados</td><td style="color:var(--mlp)"><b>Rede comum</b></td><td>Curva complexa e dados por toda parte.</td></tr>
+    </table>
+  </div>
+
+  <div class="card quiz">
+    <div class="sim-head"><h3>🎯 Teste rápido</h3><span class="pill">Acertos: <b id="score">0</b>/6</span></div>
+    <div id="quiz"></div>
+  </div>
+
+  <div class="card">
+    <h3>Referências</h3>
+    <ul class="note">
+      <li>Raissi, M.; Perdikaris, P.; Karniadakis, G. E. (2019). <i>Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations</i>. Journal of Computational Physics, 378, 686–707.</li>
+      <li>Henderson, I. <i>Physics Informed Neural Networks (PINNs): An Intuitive Guide</i>. Towards Data Science.</li>
+      <li>Materiais do Grupo G: artigo do grupo, seminário interativo (110 experimentos do oscilador) e versão v7 desta apresentação.</li>
+    </ul>
+    <p class="note">Sobre as simulações: todas usam uma rede de 1 camada oculta com ativação tanh, treinada com o otimizador Adam no seu navegador. Os erros mostrados são a raiz do erro quadrático médio (RMSE) na região sem sensores.</p>
+  </div>
+  <div class="navbtns"><button class="b" data-go="4">← Questão 26</button><button class="b primary" data-go="0">↺ Voltar ao início</button></div>
+</section>
+</main>
+<footer>UEL · Redes Neurais I · Grupo G — Guilherme Costanzi, Guilherme Braga, Rafael Cobo</footer>
+
+<script>
+/* ======================= utilidades ======================= */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const fmt=(x,d=3)=>{if(!isFinite(x))return'—';const a=Math.abs(x);const s=a>=100?x.toFixed(0):a>=10?x.toFixed(1):a>=1?x.toFixed(2):x.toFixed(d);return s.replace('.',',');};
+function rng(seed){let s=seed>>>0||1;return()=>{s^=s<<13;s>>>=0;s^=s>>17;s^=s<<5;s>>>=0;return s/4294967296;};}
+function gauss(r){let u=0;while(!u)u=r();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*r());}
+function linspace(a,b,n){const r=[];for(let i=0;i<n;i++)r.push(n===1?a:a+(b-a)*i/(n-1));return r;}
+function rmseF(f,g,a,b){let s=0,n=0;for(let t=a;t<=b+1e-9;t+=(b-a)/200){const e=f(t)-g(t);s+=e*e;n++;}return Math.sqrt(s/n);}
+function segment(id,cb){const el=$(id);el.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;el.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b));cb(b.dataset.v);});return()=>el.querySelector('.on').dataset.v;}
+
+/* ======================= mini rede neural =======================
+   1 camada oculta tanh: x(t) = d + Σ a_k·tanh(w_k·u + b_k), u = tempo normalizado.
+   Derivadas (dx/dt, d²x/dt²) e gradientes calculados analiticamente. */
+// ativação: devolve [s, s', s'', s''']
+const AF={
+  tanh:(z,o)=>{const s=Math.tanh(z),s1=1-s*s;o[0]=s;o[1]=s1;o[2]=-2*s*s1;o[3]=-2*s1*(1-3*s*s);},
+  relu:(z,o)=>{if(z>0){o[0]=z;o[1]=1;}else{o[0]=0;o[1]=0;}o[2]=0;o[3]=0;},
+  sin:(z,o)=>{const s=Math.sin(z),c=Math.cos(z);o[0]=s;o[1]=c;o[2]=-s;o[3]=-c;}
+};
+class Net{
+  constructor(H,seed,t0,t1,ws=3,act='tanh'){
+    const r=rng(seed);this.H=H;this.act=act;this.f=AF[act];this.a=new Float64Array(H);this.w=new Float64Array(H);this.b=new Float64Array(H);this.d=0;
+    for(let k=0;k<H;k++){this.w[k]=gauss(r)*ws;this.b[k]=(r()*2-1)*ws;this.a[k]=gauss(r)/Math.sqrt(H);}
+    this.mid=(t0+t1)/2;this.half=(t1-t0)/2;this.c=1/this.half;
+    const n=3*H+1;this.m=new Float64Array(n);this.v=new Float64Array(n);this.g=new Float64Array(n);this.it=0;
+    this.S0=new Float64Array(H);this.S1=new Float64Array(H);this.S2=new Float64Array(H);this.S3=new Float64Array(H);this.o=[0,0,0,0];
+  }
+  get nParams(){return 3*this.H+1;}
+  u(t){return(t-this.mid)/this.half;}
+  out(t){const u=this.u(t),o=this.o;let x=this.d;for(let k=0;k<this.H;k++){this.f(this.w[k]*u+this.b[k],o);x+=this.a[k]*o[0];}return x;}
+  fill(u){const o=this.o,H=this.H;let x=this.d,xu=0,xuu=0;
+    for(let k=0;k<H;k++){this.f(this.w[k]*u+this.b[k],o);this.S0[k]=o[0];this.S1[k]=o[1];this.S2[k]=o[2];this.S3[k]=o[3];
+      x+=this.a[k]*o[0];xu+=this.a[k]*this.w[k]*o[1];xuu+=this.a[k]*this.w[k]*this.w[k]*o[2];}
+    return[x,xu,xuu];}
+  // cfg: {dT,dY,cT,res:{a2,a1,a0,b}, lam, ic:[{t,val,ord,wt}], lr}
+  step(cfg){
+    const H=this.H,a=this.a,w=this.w,c=this.c,g=this.g,S0=this.S0,S1=this.S1,S2=this.S2,S3=this.S3;g.fill(0);
+    let Ld=0,Lp=0;const N=cfg.dT.length;
+    for(let i=0;i<N;i++){const u=this.u(cfg.dT[i]);const [x]=this.fill(u);
+      const e=x-cfg.dY[i];Ld+=e*e/N;const co=2*e/N;
+      for(let k=0;k<H;k++){g[k]+=co*S0[k];g[H+k]+=co*a[k]*S1[k]*u;g[2*H+k]+=co*a[k]*S1[k];}g[3*H]+=co;}
+    const lam=cfg.lam||0;
+    if(lam>0&&cfg.res){
+      const R=cfg.res,A2=R.a2*c*c,A1=R.a1*c,A0=R.a0,B=R.b,M=cfg.cT.length;
+      for(let j=0;j<M;j++){const u=this.u(cfg.cT[j]);const [x,xu,xuu]=this.fill(u);
+        const r=A2*xuu+A1*xu+A0*x+B;Lp+=r*r/M;const co=2*lam*r/M;
+        for(let k=0;k<H;k++){const s=S0[k],s1=S1[k],s2=S2[k],s3=S3[k],wk=w[k],ak=a[k];
+          g[k]+=co*(A2*wk*wk*s2+A1*wk*s1+A0*s);
+          g[H+k]+=co*(A2*ak*(2*wk*s2+wk*wk*s3*u)+A1*ak*(s1+wk*s2*u)+A0*ak*s1*u);
+          g[2*H+k]+=co*(A2*ak*wk*wk*s3+A1*ak*wk*s2+A0*ak*s1);}
+        g[3*H]+=co*A0;}
+      for(const ic of(cfg.ic||[])){const u=this.u(ic.t);const [x,xu]=this.fill(u);const wt=ic.wt*lam;
+        if(ic.ord===0){const e=x-ic.val;Lp+=e*e*ic.wt;const co=2*wt*e;
+          for(let k=0;k<H;k++){g[k]+=co*S0[k];g[H+k]+=co*a[k]*S1[k]*u;g[2*H+k]+=co*a[k]*S1[k];}g[3*H]+=co;}
+        else{const e=c*xu-ic.val;Lp+=e*e*ic.wt;const co=2*wt*e*c;
+          for(let k=0;k<H;k++){g[k]+=co*w[k]*S1[k];g[H+k]+=co*a[k]*(S1[k]+w[k]*S2[k]*u);g[2*H+k]+=co*a[k]*w[k]*S2[k];}}}
+    }
+    const lr=cfg.lr!=null?cfg.lr:0.01,b1=0.9,b2=0.999;this.it++;
+    const bc1=1-Math.pow(b1,this.it),bc2=1-Math.pow(b2,this.it),P=[a,w,this.b];
+    for(let q=0;q<3;q++)for(let k=0;k<H;k++){const i=q*H+k;this.m[i]=b1*this.m[i]+(1-b1)*g[i];this.v[i]=b2*this.v[i]+(1-b2)*g[i]*g[i];P[q][k]-=lr*(this.m[i]/bc1)/(Math.sqrt(this.v[i]/bc2)+1e-8);}
+    const i=3*H;this.m[i]=b1*this.m[i]+(1-b1)*g[i];this.v[i]=b2*this.v[i]+(1-b2)*g[i]*g[i];this.d-=lr*(this.m[i]/bc1)/(Math.sqrt(this.v[i]/bc2)+1e-8);
+    return{Ld,Lp};
+  }
+}
+// Y = o + m·y (normalização). Resíduo em unidades reais dividido por m.
+function normRes(res,o,m){return{a2:res.a2,a1:res.a1,a0:res.a0,b:(res.a0*o+res.b)/m};}
+function normOf(Y){const mn=Math.min(...Y),mx=Math.max(...Y);return{o:(mn+mx)/2,m:Math.max((mx-mn)/2,1e-3)};}
+
+/* ======================= gráfico em canvas ======================= */
+class Plot{
+  constructor(cv,o){this.cv=cv;this.o=o;this.h=+cv.getAttribute('height');this.layers=null;
+    new ResizeObserver(()=>this.draw()).observe(cv);}
+  draw(L){
+    if(L)this.layers=L;L=this.layers||{};
+    const cv=this.cv,dpr=window.devicePixelRatio||1,W=cv.clientWidth||600,H=this.h;
+    if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';}
+    const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);
+    const o=this.o,pl=46,pr=12,pt=14,pb=38,iw=W-pl-pr,ih=H-pt-pb;
+    const [x0,x1]=o.x,[y0,y1]=o.y,X=v=>pl+(v-x0)/(x1-x0)*iw,Y=v=>pt+(1-(v-y0)/(y1-y0))*ih;
+    x.fillStyle=css('--card');x.fillRect(0,0,W,H);
+    if(o.shade){x.fillStyle=css('--future');x.fillRect(X(o.shade[0]),pt,X(o.shade[1])-X(o.shade[0]),ih);
+      x.fillStyle=css('--futureInk');x.font='600 12px system-ui';x.textAlign='center';x.fillText(o.shadeLabel||'sem sensores',(X(o.shade[0])+X(o.shade[1]))/2,pt+14);}
+    // grade
+    x.strokeStyle=css('--line');x.lineWidth=1;x.fillStyle=css('--ink2');x.font='11px system-ui';
+    const ticks=(a,b,n)=>{const st=Math.pow(10,Math.floor(Math.log10((b-a)/n)));const m=[1,2,5,10].find(k=>(b-a)/(st*k)<=n)*st;const r=[];for(let v=Math.ceil(a/m)*m;v<=b+1e-9;v+=m)r.push(+v.toFixed(6));return r;};
+    x.textAlign='center';for(const v of ticks(x0,x1,8)){x.beginPath();x.moveTo(X(v),pt);x.lineTo(X(v),pt+ih);x.stroke();x.fillText(String(v).replace('.',','),X(v),H-pb+15);}
+    x.textAlign='right';for(const v of ticks(y0,y1,5)){x.beginPath();x.moveTo(pl,Y(v));x.lineTo(pl+iw,Y(v));x.stroke();x.fillText(String(v).replace('.',','),pl-6,Y(v)+4);}
+    if(o.xl){x.textAlign='center';x.fillText(o.xl,pl+iw/2,H-2);}
+    if(o.yl){x.textAlign='left';x.fillText(o.yl,pl+4,pt+10+(o.shade?0:0));}
+    x.save();x.beginPath();x.rect(pl,pt,iw,ih);x.clip();
+    for(const h of(L.hlines||[])){x.strokeStyle=h.color||css('--ink2');x.setLineDash([5,4]);x.lineWidth=1.2;x.beginPath();x.moveTo(pl,Y(h.y));x.lineTo(pl+iw,Y(h.y));x.stroke();x.setLineDash([]);
+      if(h.label){x.fillStyle=h.color||css('--ink2');x.font='11px system-ui';x.textAlign='left';x.fillText(h.label,pl+6,Y(h.y)-5);}}
+    for(const s of(L.lines||[])){x.strokeStyle=s.color;x.lineWidth=s.w||2.5;x.setLineDash(s.dash||[]);x.globalAlpha=s.alpha||1;x.beginPath();
+      const n=s.pts?s.pts.length:220;for(let i=0;i<n;i++){let px,py;if(s.pts){[px,py]=s.pts[i];}else{px=(s.from??x0)+((s.to??x1)-(s.from??x0))*i/(n-1);py=s.f(px);}
+        const yy=Math.max(-1e4,Math.min(1e4,Y(py)));i?x.lineTo(X(px),yy):x.moveTo(X(px),yy);}
+      x.stroke();x.setLineDash([]);x.globalAlpha=1;}
+    for(const d of(L.dots||[])){for(const [px,py] of d.pts){x.beginPath();x.arc(X(px),Y(py),d.r||4,0,7);if(d.hollow){x.strokeStyle=d.color;x.lineWidth=1.6;x.fillStyle=css('--card');x.fill();x.stroke();}else{x.fillStyle=d.color;x.fill();}}}
+    if(L.cursor!=null){x.strokeStyle=css('--ink');x.lineWidth=1;x.globalAlpha=.5;x.beginPath();x.moveTo(X(L.cursor),pt);x.lineTo(X(L.cursor),pt+ih);x.stroke();x.globalAlpha=1;
+      for(const m of(L.marks||[])){x.beginPath();x.arc(X(L.cursor),Y(m.y),5.5,0,7);x.fillStyle=m.color;x.fill();x.strokeStyle=css('--card');x.lineWidth=2;x.stroke();}}
+    x.restore();
+  }
+}
+function canvasCtx(cv){const dpr=window.devicePixelRatio||1,W=cv.clientWidth||600,H=+(cv.dataset.h||(cv.dataset.h=cv.getAttribute('height')));
+  if(cv.width!==Math.round(W*dpr)||cv.height!==Math.round(H*dpr)){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.height=H+'px';}
+  const x=cv.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,W,H);return{x,W,H};}
+// desenha mola horizontal + bloco
+function drawSpring(x,y,wallX,blockX,color,label,ink){
+  x.strokeStyle=ink;x.lineWidth=3;x.beginPath();x.moveTo(wallX,y-20);x.lineTo(wallX,y+20);x.stroke();
+  const n=12,len=blockX-wallX-6;x.lineWidth=1.8;x.strokeStyle=ink;x.beginPath();x.moveTo(wallX,y);
+  for(let i=1;i<=n;i++){x.lineTo(wallX+6+len*(i-.5)/n,y+(i%2?-8:8));}x.lineTo(blockX,y);x.stroke();
+  x.fillStyle=color;x.beginPath();x.roundRect?x.roundRect(blockX,y-14,34,28,6):x.rect(blockX,y-14,34,28);x.fill();
+  if(label){x.fillStyle=color;x.font='600 12px system-ui';x.textAlign='left';x.fillText(label,6,y+4);}
+}
+
+/* ======================= navegação ======================= */
+let page=0;const pages=$$('section.page'),onShow={};
+function go(i){page=Math.max(0,Math.min(pages.length-1,+i));pages.forEach((p,k)=>p.classList.toggle('on',k===page));
+  $$('.tab').forEach(t=>t.classList.toggle('on',+t.dataset.go===page));$('#progress').style.width=(page/(pages.length-1)*100)+'%';
+  window.scrollTo({top:0,behavior:'instant'});try{history.replaceState(null,'','#p'+page);}catch(e){}
+  requestAnimationFrame(()=>{onShow[page]&&onShow[page]();window.dispatchEvent(new Event('resize'));});}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(page+1);if(e.key==='ArrowLeft')go(page-1);});
+$('#themeBtn').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';redrawAll();};
+const redrawers=[];function redrawAll(){redrawers.forEach(f=>{try{f();}catch(e){/* gráfico de uma parte ainda não aberta */}});}
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',redrawAll);
+
+/* ======================= hero: mola animada ======================= */
+(function(){const cv=$('#heroSpring');let t0=performance.now();
+  function f(){if(page===0){const {x,W}=canvasCtx(cv);const t=(performance.now()-t0)/1000;const pos=Math.cos(1.1*t)*Math.exp(-0.04*(t%40));
+    const cx=Math.min(W*0.42,320);drawSpring(x,55,20,cx+pos*Math.min(110,W*0.2),css('--pinn'),'',css('--ink2'));
+    // traço do gráfico
+    x.strokeStyle=css('--pinn');x.lineWidth=2;x.globalAlpha=.6;x.beginPath();const gx0=Math.min(W*0.55,420),gw=W-gx0-10;
+    for(let i=0;i<=120;i++){const tt=t-i*0.05;const p=Math.cos(1.1*tt)*Math.exp(-0.04*(tt%40));const px=gx0+i/120*gw,py=55+p*38;i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();x.globalAlpha=1;}
+    requestAnimationFrame(f);}f();})();
+
+/* ======================= 1. oscilador ======================= */
+const OSC={z:0.1,w:1.5,T:10,cut:6};OSC.wd=OSC.w*Math.sqrt(1-OSC.z*OSC.z);
+const xOsc=t=>Math.exp(-OSC.z*OSC.w*t)*(Math.cos(OSC.wd*t)+OSC.z*OSC.w/OSC.wd*Math.sin(OSC.wd*t));
+const osc={seed:7,nets:null,running:false,anim:null,plot:new Plot($('#oscChart'),{x:[0,10],y:[-1.6,1.6],shade:[6,10],shadeLabel:'futuro (sem sensores)',xl:'tempo (s)',yl:'posição'})};
+function oscData(){const r=rng(osc.seed),n=+$('#oscN .on').dataset.v;const dT=linspace(0.2,OSC.cut,n);return{dT,dY:dT.map(t=>xOsc(t)+0.03*gauss(r))};}
+function oscDraw(extra={}){const D=osc.data,L={lines:[{f:xOsc,color:css('--real'),w:2,dash:[6,4]}],dots:[{pts:D.dT.map((t,i)=>[t,D.dY[i]]),color:css('--real'),r:3.5}],...extra};
+  if(osc.nets){L.lines.push({f:t=>osc.nets[0].out(t),color:css('--mlp'),w:2.8});L.lines.push({f:t=>osc.nets[1].out(t),color:css('--pinn'),w:2.8});}
+  osc.plot.draw(L);}
+function oscReset(){cancelAnimationFrame(osc.anim);osc.running=false;osc.data=oscData();osc.nets=null;$('#oscEp').textContent='0';$('#oscE1').textContent='—';$('#oscE2').textContent='—';
+  $('#oscTrain').disabled=false;$('#oscPlay').disabled=true;$('#oscVerdict').innerHTML='Clique em <b>Treinar</b> e observe a região amarela (o "futuro").';$('#lbD').style.width='0';$('#lbP').style.width='0';$('#lbDv').textContent='—';$('#lbPv').textContent='—';oscDraw();drawSprings(null);}
+function oscTrain(){cancelAnimationFrame(osc.anim);if(!osc.data)oscReset();const D=osc.data;osc.nets=[new Net(32,11,0,10),new Net(32,11,0,10)];
+  const base={dT:D.dT,dY:D.dY,cT:linspace(0,10,120),res:{a2:1,a1:2*OSC.z*OSC.w,a0:OSC.w*OSC.w,b:0},ic:[{t:0,val:1,ord:0,wt:1},{t:0,val:0,ord:1,wt:1}],lr:0.01};
+  const cM={...base,lam:0},cP={...base,lam:1};let ep=0,TOT=5000,first=null;osc.running=true;$('#oscTrain').disabled=true;$('#oscPlay').disabled=true;
+  (function loop(){let r;for(let i=0;i<35&&ep<TOT;i++,ep++){osc.nets[0].step(cM);r=osc.nets[1].step(cP);}
+    if(!first)first=r;
+    const e1=rmseF(xOsc,t=>osc.nets[0].out(t),6,10),e2=rmseF(xOsc,t=>osc.nets[1].out(t),6,10);
+    $('#oscEp').textContent=ep+' passos';$('#oscE1').textContent=fmt(e1);$('#oscE2').textContent=fmt(e2);
+    const lg=v=>Math.max(0,Math.min(100,(Math.log10(v)+5)/5*100));
+    $('#lbD').style.width=lg(r.Ld)+'%';$('#lbP').style.width=lg(r.Lp)+'%';$('#lbDv').textContent=r.Ld.toExponential(1).replace('.',',');$('#lbPv').textContent=r.Lp.toExponential(1).replace('.',',');
+    oscDraw();
+    if(ep<TOT)osc.anim=requestAnimationFrame(loop);
+    else{osc.running=false;$('#oscTrain').disabled=false;$('#oscPlay').disabled=false;const k=e1/e2;
+      $('#oscVerdict').innerHTML=k>1.5?`✅ No futuro, a <b style="color:var(--pinn)">PINN errou ${fmt(k,1)}× menos</b>. A rede comum só conhecia os pontos até 6 s; depois disso ela "inventa". A PINN continua obedecendo a equação da mola.`:`As duas ficaram parecidas desta vez. Tente <b>menos sensores</b> (6) para ver a diferença crescer.`;
+      oscPlay();}})();}
+function drawSprings(t){const cv=$('#oscSprings');const {x,W}=canvasCtx(cv);x.fillStyle=css('--card');x.fillRect(0,0,W,150);
+  const ink=css('--ink2'),wall=88,cx=wall+(W-wall)*0.5,amp=Math.min((W-wall)*0.3,220);
+  const rows=[['Real',css('--real'),xOsc],['Rede comum',css('--mlp'),osc.nets?u=>osc.nets[0].out(u):null],['PINN',css('--pinn'),osc.nets?u=>osc.nets[1].out(u):null]];
+  rows.forEach(([lb,col,f],i)=>{const y=28+i*45;const p=(t==null||!f)?(i===0?1:0):Math.max(-1.6,Math.min(1.6,f(t)));drawSpring(x,y+6,wall,cx+p*amp-17,col,lb,ink);});
+  x.strokeStyle=css('--line');x.setLineDash([3,3]);x.beginPath();x.moveTo(cx,8);x.lineTo(cx,145);x.stroke();x.setLineDash([]);
+  x.fillStyle=t!=null&&t>6?css('--futureInk'):ink;x.font='600 13px system-ui';x.textAlign='right';x.fillText(t==null?'':`t = ${t.toFixed(1).replace('.',',')} s${t>6?' · futuro':''}`,W-8,16);}
+function oscPlay(){cancelAnimationFrame(osc.anim);const t0=performance.now();
+  (function f(){const t=Math.min(10,(performance.now()-t0)/1000*0.9);drawSprings(t);
+    oscDraw({cursor:t,marks:[{y:xOsc(t),color:css('--real')},{y:osc.nets[0].out(t),color:css('--mlp')},{y:osc.nets[1].out(t),color:css('--pinn')}]});
+    if(t<10)osc.anim=requestAnimationFrame(f);})();}
+$('#oscTrain').onclick=oscTrain;$('#oscPlay').onclick=oscPlay;$('#oscNew').onclick=()=>{osc.seed++;oscReset();};
+segment('#oscN',()=>oscReset());
+redrawers.push(()=>{oscDraw();drawSprings(null);});
+const chipTxt={d:'<b style="color:var(--mlp)">Erro nos sensores:</b> a curva da rede passa perto das medições? É o mesmo erro que qualquer rede comum usa.',
+  p:'<b style="color:var(--pinn)">Erro na equação:</b> em ~120 instantes espalhados por <b>todo</b> o tempo (inclusive no futuro, sem sensor), conferimos se a curva obedece à lei da mola: <i>aceleração + atrito + força da mola = 0</i>. O número <b>λ</b> diz quanto essa parte "pesa". Esses instantes de checagem se chamam <i>pontos de colocação</i>.'};
+$$('.chip').forEach(c=>c.onclick=()=>{$$('.chip').forEach(x=>x.classList.toggle('on',x===c));$('#chipTxt').innerHTML=chipTxt[c.dataset.chip];});
+chipTxt.l='<b style="color:var(--reg)">λ (lambda):</b> o <b>peso da física</b>. É um número que nós escolhemos: diz quanto "obedecer à equação" importa em comparação com "passar perto dos sensores". Veja a balança e o teste logo abaixo.';
+$('#chipTxt').innerHTML=chipTxt.d;
+
+/* treino em pedaços: roda passos até gastar ~14 ms por quadro */
+function runBudget(stepFn,total,onFrame,onDone){let ep=0,id;
+  (function loop(){const t0=performance.now();while(ep<total&&performance.now()-t0<8){stepFn();ep++;}
+    onFrame&&onFrame(ep,total);if(ep<total)id=requestAnimationFrame(loop);else onDone&&onDone();})();
+  return()=>cancelAnimationFrame(id);}
+function oscCfg(dT,dY,lam,a0mult=1){return{dT,dY,cT:linspace(0,10,120),res:{a2:1,a1:2*OSC.z*OSC.w,a0:a0mult*OSC.w*OSC.w,b:0},lam,ic:[{t:0,val:1,ord:0,wt:1},{t:0,val:0,ord:1,wt:1}],lr:0.01};}
+
+/* ---- experimento: mais sensores ---- */
+const SENS=[{l:['6 sensores','0–6 s'],n:6,end:6},{l:['15 sensores','0–6 s'],n:15,end:6},{l:['40 sensores','0–6 s'],n:40,end:6},{l:['15 sensores','0–10 s'],n:15,end:10}];
+const sens={res:SENS.map(()=>[null,null]),nets:SENS.map(()=>[null,null]),data:[],sel:-1,stop:null,
+  mini:new Plot($('#sensMini'),{x:[0,10],y:[-1.6,1.6],xl:'tempo (s)'})};
+function sensBars(){const cv=$('#sensBars');const {x,W,H}=canvasCtx(cv);x.fillStyle=css('--card');x.fillRect(0,0,W,H);
+  x.save();x.translate(12,(H-52)/2+10);x.rotate(-Math.PI/2);x.fillStyle=css('--ink2');x.font='600 11px system-ui';x.textAlign='center';x.fillText('erro no futuro (6–10 s)',0,0);x.restore();
+  const pl=58,pb=52,pt=10,ih=H-pt-pb,iw=W-pl-8,lo=-3,hi=0.5,Y=v=>pt+(1-(Math.log10(Math.max(v,1e-3))-lo)/(hi-lo))*ih;
+  x.font='11px system-ui';x.fillStyle=css('--ink2');x.strokeStyle=css('--line');x.textAlign='right';
+  for(const v of [0.001,0.01,0.1,1]){x.beginPath();x.moveTo(pl,Y(v));x.lineTo(pl+iw,Y(v));x.stroke();x.fillText(String(v).replace('.',','),pl-4,Y(v)+4);}
+  const gw=iw/SENS.length,bw=Math.min(28,gw*0.3);sens.geo=[];
+  SENS.forEach((s,i)=>{const cx=pl+gw*(i+.5);sens.geo.push([pl+gw*i,pl+gw*(i+1)]);
+    if(i===sens.sel){x.fillStyle=css('--soft');x.fillRect(pl+gw*i+2,pt,gw-4,ih);}
+    if(s.end===10){x.fillStyle=css('--future');x.fillRect(pl+gw*i+2,pt,gw-4,ih);}
+    sens.res[i].forEach((v,j)=>{if(v==null)return;const bx=cx+(j?2:-bw-2),y=Y(v);x.fillStyle=css(j?'--pinn':'--mlp');x.fillRect(bx,y,bw,pt+ih-y);
+      x.fillStyle=css('--ink');x.textAlign='center';x.font='600 11px system-ui';x.fillText(fmt(v,3),bx+bw/2,y-4);});
+    const [num,word]=s.l[0].split(' ');x.fillStyle=css('--ink');x.font='600 12px system-ui';x.textAlign='center';x.fillText(num,cx,H-pb+15);
+    x.fillStyle=css('--ink2');x.font='11px system-ui';x.fillText(word,cx,H-pb+29);x.fillStyle=s.end===10?css('--futureInk'):css('--ink2');x.font='600 11px system-ui';x.fillText(s.l[1],cx,H-pb+43);});}
+function sensMini(i){sens.sel=i;sensBars();if(i<0||!sens.data[i])return;const D=sens.data[i],s=SENS[i];sens.mini.o.shade=s.end<10?[s.end,10]:null;
+  const L={lines:[{f:xOsc,color:css('--real'),w:2,dash:[6,4]}],dots:[{pts:D.dT.map((t,k)=>[t,D.dY[k]]),color:css('--real'),r:3}]};
+  sens.nets[i].forEach((n,j)=>{if(n)L.lines.push({f:t=>n.out(t),color:css(j?'--pinn':'--mlp'),w:2.5});});sens.mini.draw(L);
+  $('#sensMiniLbl').textContent=`${s.l[0]} entre ${s.l[1]}`;}
+function sensRun(){sens.stop&&sens.stop();sens.res=SENS.map(()=>[null,null]);sens.nets=SENS.map(()=>[null,null]);
+  sens.data=SENS.map(s=>{const r=rng(osc.seed);const dT=linspace(0.2,s.end,s.n);return{dT,dY:dT.map(t=>xOsc(t)+0.03*gauss(r))};});
+  const jobs=[];SENS.forEach((s,i)=>[0,1].forEach(j=>jobs.push([i,j])));let q=0;$('#sensRun').disabled=true;
+  (function next(){if(q>=jobs.length){$('#sensProg').textContent='Pronto! Toque nas barras para ver as curvas.';$('#sensRun').disabled=false;sensMini(sens.sel<0?2:sens.sel);return;}
+    const [i,j]=jobs[q],D=sens.data[i],net=new Net(32,11,0,10),cfg=oscCfg(D.dT,D.dY,j);sens.nets[i][j]=net;
+    sens.stop=runBudget(()=>net.step(cfg),5000,(e,t)=>{$('#sensProg').textContent=`Treinando ${q+1}/${jobs.length}… ${Math.round(e/t*100)}%`;},
+      ()=>{sens.res[i][j]=rmseF(xOsc,t=>net.out(t),6,10);sensMini(i);q++;next();});})();}
+$('#sensRun').onclick=sensRun;
+$('#sensBars').addEventListener('pointermove',e=>{if(!sens.geo)return;const r=e.target.getBoundingClientRect(),px=e.clientX-r.left;const i=sens.geo.findIndex(([a,b])=>px>=a&&px<b);if(i>=0&&i!==sens.sel&&sens.data[i])sensMini(i);});
+redrawers.push(()=>{sensBars();sensMini(sens.sel);});
+
+/* ---- λ: balança + simulação ---- */
+const lam={plot:new Plot($('#lamChart'),{x:[0,10],y:[-1.6,1.6],shade:[6,10],shadeLabel:'futuro (sem sensores)',xl:'tempo (s)'}),stop:null};
+function lamScale(v){const cv=$('#lamScale');const {x,W,H}=canvasCtx(cv);x.fillStyle=css('--card');x.fillRect(0,0,W,H);
+  const cx=W/2,cy=70,L=Math.min(W*0.38,170),lg=v<=0?-2.5:Math.max(-2.5,Math.min(2.5,Math.log10(v))),ang=lg/2.5*0.3;
+  x.fillStyle=css('--ink2');x.beginPath();x.moveTo(cx,cy);x.lineTo(cx-16,cy+60);x.lineTo(cx+16,cy+60);x.fill();
+  const ex=Math.cos(ang)*L,ey=Math.sin(ang)*L;x.strokeStyle=css('--ink');x.lineWidth=4;x.beginPath();x.moveTo(cx-ex,cy-ey);x.lineTo(cx+ex,cy+ey);x.stroke();
+  const pan=(px,py,col,txt,w)=>{x.strokeStyle=col;x.lineWidth=1.5;x.beginPath();x.moveTo(px,py);x.lineTo(px-24,py+30);x.moveTo(px,py);x.lineTo(px+24,py+30);x.stroke();
+    x.fillStyle=col;x.beginPath();x.ellipse(px,py+32,34,7,0,0,7);x.fill();x.font='600 13px system-ui';x.textAlign='center';x.fillText(txt,px,py+58);x.font='12px system-ui';x.fillText(w,px,py+74);};
+  pan(cx-ex,cy-ey,css('--mlp'),'Sensores','peso 1');pan(cx+ex,cy+ey,css('--pinn'),'Física',`peso λ = ${String(v).replace('.',',')}`);}
+function lamRun(){lam.stop&&lam.stop();const v=+$('#lamVal .on').dataset.v,bad=$('#lamEq .on').dataset.v==='bad';lamScale(v);
+  const r=rng(7);const dT=linspace(0.2,6,15),dY=dT.map(t=>xOsc(t)+0.03*gauss(r));const net=new Net(32,11,0,10),cfg=oscCfg(dT,dY,v,bad?1.3:1);
+  const wb=OSC.w*Math.sqrt(1.3),wdb=wb*Math.sqrt(1-OSC.z*OSC.z),xb=t=>Math.exp(-OSC.z*wb*t)*(Math.cos(wdb*t)+OSC.z*wb/wdb*Math.sin(wdb*t));
+  const draw=()=>{const L={lines:[{f:xOsc,color:css('--real'),w:2,dash:[6,4]}],dots:[{pts:dT.map((t,k)=>[t,dY[k]]),color:css('--real'),r:3}]};
+    L.lines.push({f:t=>net.out(t),color:css('--pinn'),w:2.8});if(bad&&v>0)L.lines.push({f:xb,color:css('--warn'),w:2,dash:[2,4]});lam.plot.draw(L);
+    $('#lamE0').textContent=fmt(rmseF(xOsc,t=>net.out(t),0,6));$('#lamE1').textContent=fmt(rmseF(xOsc,t=>net.out(t),6,10));};
+  const T={ok:{0:'λ = 0: a física não entra na conta. A PINN virou uma <b>rede comum</b> e chuta no futuro.',0.01:'λ = 0,01: a física é só uma dica, mas <b>já ajuda muito</b> no futuro.',1:'λ = 1: equilíbrio entre sensores e física. Ótimo resultado.',100:'λ = 100: a física manda. Como a equação está <b>certa</b>, isso não atrapalha — fica até melhor.'},
+    bad:{0:'λ = 0: sem física, a equação errada nem é usada. Rede comum: chuta no futuro.',0.01:'λ = 0,01: a física errada é só uma dica e os sensores corrigem boa parte. Aqui é o <b>melhor λ</b> para uma equação errada.',1:'λ = 1: a física errada já <b>puxa a curva</b>. A PINN começa a errar até onde há sensores.',100:'λ = 100: a rede obedece à equação errada (linha vermelha pontilhada) e <b>ignora os sensores</b>. Erra no passado e no futuro.'}};
+  $('#lamTxt').innerHTML='Treinando…';lam.stop=runBudget(()=>net.step(cfg),5000,draw,()=>{draw();$('#lamTxt').innerHTML=T[bad?'bad':'ok'][v];});}
+segment('#lamVal',lamRun);segment('#lamEq',lamRun);redrawers.push(()=>{lamScale(+$('#lamVal .on').dataset.v);lam.plot.draw();});
+onShow[1]=()=>{if(!osc.data)oscReset();sensBars();if(!lam.plot.layers)lamRun();else lamScale(+$('#lamVal .on').dataset.v);};
+
+/* ======================= 2. Q24 ======================= */
+// ---- diagramas SVG das arquiteturas (cores = tokens do tema; trocam sozinhas no modo escuro) ----
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.body.insertAdjacentHTML('afterbegin',`<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${['in','hid','out','err','vio','ink'].map(k=>`<marker id="ah-${k}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" class="mk-${k}"/></marker>`).join('')}</defs></svg>`);
+const T_=(x,y,s,c='',a)=>`<text x="${x}" y="${y}" class="${c}"${a?` style="text-anchor:${a}"`:''}>${s}</text>`;
+const N_=(x,y,r,c,l='')=>`<circle cx="${x}" cy="${y}" r="${r}" class="${c}"/>`+(l?T_(x,y+4,l,'nl'):'');
+const R_=(x,y,w,h,c,rx=8)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" class="${c}"/>`;
+const L_=(x1,y1,x2,y2,c='e')=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="${c}"/>`;
+const P_=(d,k,extra='')=>`<path d="${d}" class="ar ar-${k} ${extra}" marker-end="url(#ah-${k})"/>`;
+const A_=(x1,y1,x2,y2,k='ink',extra='')=>P_(`M${x1},${y1}L${x2},${y2}`,k,extra);
+const ys_=(n,yc,sp)=>Array.from({length:n},(_,i)=>yc+(i-(n-1)/2)*sp);
+function net_(cols,yc,flow=true){let s='';
+  for(let i=0;i<cols.length-1;i++){const a=cols[i],b=cols[i+1];for(const y1 of ys_(a.n,yc,a.sp))for(const y2 of ys_(b.n,yc,b.sp))s+=L_(a.x+a.r,y1,b.x-b.r,y2,'e'+(flow?' flow':''));}
+  for(const c of cols)ys_(c.n,yc,c.sp).forEach((y,k)=>s+=N_(c.x,y,c.r,c.cls,c.lb?c.lb[k]:''));return s;}
+const SVG_=(w,h,inner,label)=>`<svg viewBox="0 0 ${w} ${h}" class="dg" role="img" aria-label="${label}">${inner}</svg>`;
+const SMILE=['00111100','01000010','10100101','10100101','10000001','10100101','01011010','00111100'];
+function pix_(x0,y0,c){let s=R_(x0,y0,8*c,8*c,'pxbg',3);
+  SMILE.forEach((r,i)=>[...r].forEach((v,j)=>{if(v==='1')s+=`<rect x="${x0+j*c}" y="${y0+i*c}" width="${c}" height="${c}" class="px"/>`;}));
+  for(let k=1;k<8;k++)s+=L_(x0+k*c,y0,x0+k*c,y0+8*c,'pxg')+L_(x0,y0+k*c,x0+8*c,y0+k*c,'pxg');return s;}
+function dgReg(){const X=v=>45+v*185,Y=v=>195-v*155;let s=L_(45,195,240,195,'axis')+L_(45,195,45,30,'axis');
+  s+=`<line x1="${X(0)}" y1="${Y(.1)}" x2="${X(1)}" y2="${Y(.9)}" class="ar ar-out" style="stroke-width:3.5"/>`;
+  [[.06,.14],[.17,.2],[.3,.36],[.41,.38],[.53,.55],[.66,.6],[.79,.74],[.92,.8]].forEach(([a,b])=>s+=`<circle cx="${X(a)}" cy="${Y(b)}" r="5.5" class="px"/>`);
+  s+=T_(142,20,'Os dados formam uma reta','t c-in')+T_(142,216,'horas de estudo →')+T_(52,40,'nota','s','start');
+  s+=T_(410,40,'A "rede" inteira:','t c-ink')+N_(330,110,22,'in','x')+N_(490,110,22,'out','ŷ')+A_(354,110,463,110,'hid')+T_(410,100,'× a  + b','t c-hid');
+  s+=T_(410,152,'só 2 números para ajustar: a e b')+T_(410,170,'nenhuma camada oculta','s')+T_(410,204,'ŷ = a · x + b','t c-out');
+  return SVG_(520,228,s,'Regressão linear: pontos que formam uma reta e a fórmula y igual a a vezes x mais b');}
+function dgCNN(){let s=pix_(16,50,15);
+  const I=SMILE.map(r=>[...r].map(Number)),F=[];for(let i=0;i<6;i++)for(let j=0;j<6;j++){let v=0;for(let a=0;a<3;a++)for(let b=0;b<3;b++)v+=I[i+a][j+b];F.push(v);}
+  const mx=Math.max(...F),op=v=>(.12+.88*v/mx).toFixed(2);
+  s+=R_(180,75,72,72,'hid',3);F.forEach((v,k)=>{s+=`<rect x="${180+12*(k%6)}" y="${75+12*Math.floor(k/6)}" width="12" height="12" class="fm cnnC fade" data-o="${op(v)}" style="opacity:0"/>`;});
+  s+=R_(290,90,42,42,'vio',3);
+  for(let i=0;i<3;i++)for(let j=0;j<3;j++){const v=Math.max(F[12*i+2*j],F[12*i+2*j+1],F[12*i+6+2*j],F[12*i+6+2*j+1]);s+=`<rect x="${290+14*j}" y="${90+14*i}" width="14" height="14" class="pl cnnP fade" data-o="${op(v)}" style="opacity:0"/>`;}
+  s+=A_(256,111,284,111,'vio')+A_(336,111,368,111,'ink');
+  const dy=[80,111,142];
+  s+=`<g class="cnnL fade">${dy.map(y=>L_(396,y,443,111,'e flow')).join('')}${dy.map(y=>N_(385,y,11,'hid')).join('')}${N_(465,111,22,'out')}<text x="465" y="118" style="font-size:20px">😀</text>${T_(465,152,'rosto! 94%','t c-out')}</g>`;
+  s+=`<line id="cnnG1" class="ar ar-err dash" style="stroke-width:1.3"/><line id="cnnG2" class="ar ar-err dash" style="stroke-width:1.3"/>`;
+  s+=`<rect id="cnnF" x="16" y="50" width="45" height="45" style="fill:var(--warn);fill-opacity:.15;stroke:var(--warn);stroke-width:3"/><rect id="cnnH" x="180" y="75" width="12" height="12" style="fill:none;stroke:var(--warn);stroke-width:2.5"/>`;
+  s+=T_(76,38,'① Imagem','t c-in')+T_(76,192,'② Filtro 3×3','t c-err')+T_(76,207,'(kernel · convolução)','s')+T_(216,63,'③ Feature map','t c-hid')
+    +T_(311,80,'④ Pooling','t c-vio')+T_(311,148,'(resume o mapa)','s')+T_(385,60,'camada densa','s c-hid')+T_(465,75,'⑤ Decisão','t c-out');
+  return SVG_(520,220,s,'Rede convolucional: um filtro 3 por 3 desliza pela imagem, gera um feature map, que passa por pooling e chega a uma decisão');}
+function cnnAnim(){const v=$('#scenViz'),F=v.querySelector('#cnnF'),H=v.querySelector('#cnnH'),g1=v.querySelector('#cnnG1'),g2=v.querySelector('#cnnG2');
+  const C=[...v.querySelectorAll('.cnnC')],P=[...v.querySelectorAll('.cnnP')],Lt=[...v.querySelectorAll('.cnnL')];let k=0,to;
+  const at=(el,o)=>Object.entries(o).forEach(([a,b])=>el.setAttribute(a,b));
+  const set=k=>{const i=Math.floor(k/6),j=k%6,fx=16+15*j,fy=50+15*i,cx=180+12*j,cy=75+12*i;
+    at(F,{x:fx,y:fy});at(H,{x:cx,y:cy});at(g1,{x1:fx+45,y1:fy,x2:cx,y2:cy});at(g2,{x1:fx+45,y1:fy+45,x2:cx,y2:cy+12});
+    C.forEach((c,n)=>c.style.opacity=n<=k?c.dataset.o:0);};
+  const reset=()=>{P.forEach(p=>p.style.opacity=0);Lt.forEach(p=>p.style.opacity=.2);};
+  if(RM){set(35);P.forEach(p=>p.style.opacity=p.dataset.o);return()=>{};}
+  const tick=()=>{if(k<36){set(k++);to=setTimeout(tick,240);}else if(k===36){P.forEach(p=>p.style.opacity=p.dataset.o);k++;to=setTimeout(tick,700);}
+    else if(k===37){Lt.forEach(p=>p.style.opacity=1);k++;to=setTimeout(tick,2800);}else{k=0;reset();tick();}};
+  reset();tick();return()=>clearTimeout(to);}
+function dgRNN(){const xs=[130,240,350,460],inW=['O','café','está','muito'],outW=['café','está','muito','quente ☕'],sub=['₁','₂','₃','₄'];
+  let s=T_(10,45,'Palpite','t c-out','start')+T_(10,125,'Memória','t c-hid','start')+T_(10,141,'(hidden state)','s c-hid','start')+T_(10,209,'Entrada','t c-in','start')+T_(185,92,'lembra','s c-hid')+T_(185,160,'erro volta (BPTT)','s c-err');
+  xs.forEach((x,t)=>{let g='';if(t>0){const p=xs[t-1];g+=A_(p+36,113,x-38,113,'hid')+A_(x-37,133,p+38,133,'err','dash');}
+    g+=R_(x-38,190,76,30,'in')+T_(x,210,inW[t],'nl')+A_(x,188,x,149,'in')+R_(x-36,98,72,46,'hid rnnH',10)+T_(x,126,'h'+sub[t],'nl')
+      +A_(x,96,x,60,'out')+R_(x-38,26,76,30,'out')+T_(x,46,outW[t],'nl');
+    s+=`<g class="rnnG fade">${g}</g>`;});
+  return SVG_(520,232,s,'Rede recorrente: as palavras entram uma por vez, a memória passa adiante e a rede dá um palpite da próxima palavra');}
+function rnnAnim(){const G=[...$$('#scenViz .rnnG')],H=[...$$('#scenViz .rnnH')];let t=0,to;
+  const show=k=>{G.forEach((g,i)=>g.style.opacity=i<=k?1:.15);H.forEach((h,i)=>h.classList.toggle('cur',i===k));};
+  if(RM){show(3);return()=>{};}
+  const tick=()=>{if(t<4){show(t++);to=setTimeout(tick,1100);}else{t=0;to=setTimeout(tick,1600);}};tick();return()=>clearTimeout(to);}
+function dgPINN(){let s=net_([{x:40,n:1,sp:0,r:16,cls:'in',lb:['t']},{x:105,n:3,sp:38,r:12,cls:'hid'},{x:170,n:3,sp:38,r:12,cls:'hid'},{x:235,n:1,sp:0,r:18,cls:'out',lb:['x̂']}],105);
+  s+=T_(137,40,'Rede (tanh)','t c-hid')+T_(40,140,'tempo','s c-in')+T_(235,142,'posição','s c-out');
+  s+=R_(300,20,210,64,'hid',10)+T_(405,42,'① Erro nos sensores','t c-hid')+T_(405,60,'a curva passa perto')+T_(405,76,'dos pontos medidos?');
+  s+=R_(300,108,210,80,'out',10)+T_(405,130,'② Erro na física','t c-out')+T_(405,148,'derivadas automáticas: x̂′ e x̂″')+T_(405,170,'x̂″ + 2ζω·x̂′ + ω²·x̂ = 0 ?','nl');
+  s+=A_(254,100,296,58,'hid')+A_(254,110,296,146,'out')+R_(300,208,210,36,'err',10)+T_(405,231,'Erro total = ① + λ × ②','t c-err');
+  s+=P_('M510,52 H522 V226 H514','hid')+A_(405,190,405,204,'out')+P_('M298,226 H105 V160','err','dash anim')+T_(200,218,'ajusta os pesos','s c-err');
+  return SVG_(530,255,s,'PINN: a rede recebe o tempo e devolve a posição, que é conferida contra os sensores e contra a equação física; o erro total ajusta os pesos');}
+function dgMLP(){let s=net_([{x:105,n:3,sp:52,r:16,cls:'in'},{x:215,n:4,sp:42,r:15,cls:'hid'},{x:325,n:3,sp:48,r:15,cls:'hid'},{x:430,n:1,sp:0,r:18,cls:'out',lb:['ŷ']}],112);
+  s+=T_(105,32,'Entrada','t c-in')+T_(270,14,'Camadas ocultas','t c-hid')+T_(215,30,'1ª','s c-hid')+T_(325,30,'2ª','s c-hid')+T_(430,32,'Saída','t c-out');
+  ['área','quartos','idade'].forEach((w,k)=>s+=T_(82,ys_(3,112,52)[k]+4,w,'','end'));s+=T_(454,116,'preço','nl','start');
+  s+=A_(90,215,450,215,'out')+T_(270,208,'ida (forward pass): o dado entra e vira uma previsão','s c-out')+A_(450,234,90,234,'err','dash anim')+T_(270,252,'volta (backpropagation): o erro corrige os pesos','s c-err');
+  return SVG_(520,260,s,'Rede densa: área, quartos e idade entram, passam por duas camadas ocultas e sai o preço; o erro volta corrigindo os pesos');}
+function dgAE(){let s=`<polygon points="28,30 268,82 268,148 28,200" class="bgin"/><polygon points="252,82 492,30 492,200 252,148" class="bgout"/>`;
+  s+=net_([{x:50,n:5,sp:34,r:13,cls:'in'},{x:155,n:3,sp:40,r:13,cls:'hid'},{x:260,n:2,sp:44,r:15,cls:'vio',lb:['z₁','z₂']},{x:365,n:3,sp:40,r:13,cls:'hid'},{x:470,n:5,sp:34,r:13,cls:'out'}],115);
+  s+=[['Entrada','c-in',50,'dado completo'],['Encoder','c-hid',155,'espreme'],['Espaço latente','c-vio',260,'só 2 números'],['Decoder','c-hid',365,'reconstrói'],['Cópia','c-out',470,'dado de volta']]
+    .map(([a,c,x,b])=>T_(x,226,a,'t '+c)+T_(x,243,b,'s')).join('');
+  return SVG_(520,252,s,'Autoencoder: o encoder espreme os dados num espaço latente de 2 números e o decoder os reconstrói');}
+const LEG=i=>`<div class="dglegend"><span><i style="border-color:var(--reg);background:var(--regSoft)"></i>entrada</span>${i?`<span><i style="border-color:var(--mlp);background:var(--mlpSoft)"></i>${i===2?'memória':'camadas ocultas'}</span>`:''}`
+  +`${i===5?'<span><i style="border-color:var(--violet);background:var(--violetSoft)"></i>espaço latente</span>':''}<span><i style="border-color:var(--pinn);background:var(--accentSoft)"></i>saída</span>`
+  +`${[2,3,4].includes(i)?'<span><i class="ln" style="border-color:var(--warn)"></i>correção do erro (treino)</span>':''}</div>`;
+const scen=[
+ ['Regressão linear','Uma reta tem só 2 números (inclinação e início). Resolve na hora, sem treino e sem risco de decorar ruído. Rede neural aqui seria exagero.',dgReg,
+  ['Cada ponto azul é um aluno: horas de estudo × nota.','A <b style="color:var(--pinn)">linha verde</b> é a reta que passa mais perto de todos.','A "rede" inteira é a fórmula da direita: multiplica por <b>a</b> e soma <b>b</b>. Não há camadas ocultas.']],
+ ['Rede convolucional (CNN)','Ela olha a imagem em pedacinhos, como uma lupa que desliza. Assim reconhece bordas, formas e objetos em qualquer lugar da foto.',dgCNN,
+  ['O <b style="color:var(--warn)">filtro vermelho</b> (o <i>kernel</i>) desliza pela imagem como uma lupa, 3×3 pixels por vez. Isso é a <b>convolução</b>.','Em cada parada ele anota quanto "traço" viu. Isso pinta o <b style="color:var(--mlp)"><i>feature map</i></b> (mapa de características).','O <b style="color:var(--violet)">pooling</b> resume o mapa, guardando só o valor mais forte de cada região.','Uma camada densa junta tudo e decide: "é um rosto!".'],cnnAnim],
+ ['RNN / Transformer','Feitas para sequências: lembram o que veio antes (palavras, valores no tempo).',dgRNN,
+  ['A frase entra <b>uma palavra por vez</b>, da esquerda para a direita.','A <b style="color:var(--mlp)">memória</b> (h, o <i>hidden state</i>) passa adiante o que já foi lido.','Em cada passo, a rede dá um <b style="color:var(--pinn)">palpite da próxima palavra</b>.','Os <b>Transformers</b> (como os do ChatGPT) fazem o mesmo trabalho, mas olham todas as palavras de uma vez.'],rnnAnim],
+ ['PINN','Poucos dados, mas conhecemos a equação. A física "preenche" onde não há sensores — é o caso da mola e do café.',dgPINN,
+  ['A rede recebe o <b style="color:var(--reg)">tempo t</b> e devolve a <b style="color:var(--pinn)">posição x̂(t)</b>.','Essa resposta é conferida duas vezes: contra os <b style="color:var(--mlp)">sensores</b> e contra a <b style="color:var(--pinn)">equação da física</b>.','As duas notas formam o <b style="color:var(--warn)">erro total</b>, que volta e ajusta os pesos da rede.']],
+ ['Rede comum (MLP)','Sem lei conhecida, mas dados de sobra: a rede aprende a forma direto dos dados. Veremos isso na Questão 26.',dgMLP,
+  ['Exemplo: prever o <b>preço de uma casa</b> a partir de área, quartos e idade.','Cada neurônio recebe <b>todos</b> os valores da camada anterior (por isso se chama "densa").','<b style="color:var(--pinn)">Ida</b> (<i>forward pass</i>): a informação flui da esquerda para a direita até virar o preço.','<b style="color:var(--warn)">Volta</b> (<i>backpropagation</i>): o erro da previsão corrige os pesos.']],
+ ['Autoencoder','Não há uma resposta para prever: a rede aprende a <b>resumir</b> os dados e depois reconstruí-los. Serve para comprimir, tirar ruído e achar casos estranhos (fraude, defeito).',dgAE,
+  ['A rede é obrigada a passar os dados por um <b style="color:var(--violet)"><i>bottleneck</i></b> (gargalo) de só 2 números: o <b style="color:var(--violet)">espaço latente</b>.','O <b style="color:var(--mlp)"><i>encoder</i></b> aprende a espremer o essencial; o <b style="color:var(--mlp)"><i>decoder</i></b>, a reconstruir.','Se a cópia sai muito diferente do original, o dado é "estranho": é assim que se acham fraudes e defeitos.']]];
+let scenStop=()=>{};
+function scenShow(i){scenStop();scenStop=()=>{};$$('#scen button').forEach(x=>x.classList.toggle('on',+x.dataset.s===i));const s=scen[i];
+  $('#scenTxt').innerHTML=`<b>Recomendação: ${s[0]}</b><br>${s[1]}`;
+  $('#scenViz').innerHTML=s[2]()+LEG(i)+`<div class="howto"><b>Como ler:</b><ol>${s[3].map(l=>`<li>${l}</li>`).join('')}</ol></div>`;
+  if(s[4])scenStop=s[4]();}
+$('#scen').onclick=e=>{const b=e.target.closest('button');if(b)scenShow(+b.dataset.s);};
+scenShow(4);
+// ---- visuais do ②c (camadas) ----
+function dgWideDeep(){let s=net_([{x:40,n:1,sp:0,r:13,cls:'in',lb:['t']},{x:135,n:8,sp:19,r:8,cls:'hid'},{x:230,n:1,sp:0,r:13,cls:'out'}],110);
+  s+=net_([{x:300,n:1,sp:0,r:13,cls:'in',lb:['t']},...[345,390,435,480].map(x=>({x,n:2,sp:56,r:10,cls:'hid'})),{x:525,n:1,sp:0,r:13,cls:'out'}],110);
+  s+=`<line x1="265" y1="30" x2="265" y2="190" class="e" style="stroke-dasharray:4 4"/>`;
+  s+=T_(135,20,'Rede larga','t c-hid')+T_(135,203,'8 neurônios lado a lado (1 camada)','s')+T_(412,20,'Rede funda','t c-out')+T_(412,203,'8 neurônios em 4 camadas (2 por camada)','s');
+  [345,390,435,480].forEach((x,k)=>s+=T_(x,172,`${k+1}ª`,'s c-hid'));
+  return SVG_(550,212,s,'Os mesmos 8 neurônios arrumados numa camada larga ou em 4 camadas de 2');}
+function dgLevels(){let s=pix_(21,28,11)+A_(116,72,144,72)+A_(256,72,284,72)+A_(396,72,424,72);
+  const st=c=>`style="stroke:var(${c});stroke-width:4;stroke-linecap:round;fill:none"`;
+  s+=R_(150,28,100,88,'hid',10)+[[162,50,188,50],[225,38,225,62],[163,107,187,83],[213,83,237,107]].map(([a,b,c,d])=>`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" ${st('--mlp')}/>`).join('');
+  s+=R_(290,28,100,88,'vio',10)+`<circle cx="318" cy="56" r="15" ${st('--violet')}/><path d="M334,92 Q352,110 370,92" ${st('--violet')}/><circle cx="356" cy="48" r="4.5" style="fill:var(--violet)"/><circle cx="374" cy="48" r="4.5" style="fill:var(--violet)"/>`;
+  s+=R_(430,28,100,88,'out',10)+`<circle cx="480" cy="72" r="33" style="fill:var(--card);stroke:var(--pinn);stroke-width:3"/><circle cx="468" cy="62" r="4" style="fill:var(--ink)"/><circle cx="492" cy="62" r="4" style="fill:var(--ink)"/><path d="M463,82 Q480,98 497,82" style="stroke:var(--ink);stroke-width:3;fill:none;stroke-linecap:round"/>`;
+  s+=[['Foto','c-in',65,'só pixels'],['Camada 1','c-hid',200,'acha traços'],['Camada 2','c-vio',340,'junta em formas'],['Camada 3','c-out',480,'reconhece: rosto!']].map(([a,c,x,b])=>T_(x,138,a,'t '+c)+T_(x,155,b,'s')).join('');
+  return SVG_(540,165,s,'Cada camada enxerga um nível: pixels, traços, formas e o rosto');}
+$('#layWideDeep').innerHTML=dgWideDeep();$('#layLevels').innerHTML=dgLevels();
+// polinômio: underfitting x overfitting
+const poly={plot:new Plot($('#polyChart'),{x:[-1,1],y:[-1.8,1.8],xl:'entrada',yl:'saída'})};
+const fTrue=x=>Math.sin(2.6*x)+0.25*x;
+(function(){const r=rng(3);poly.tr=linspace(-0.95,0.95,13).map(x=>[x+(r()-.5)*0.08,0]);poly.tr.forEach(p=>p[1]=fTrue(p[0])+0.18*gauss(r));
+  poly.te=linspace(-0.97,0.97,40).map(x=>[x,fTrue(x)+0.18*gauss(r)]);})();
+function fitPoly(pts,deg){const n=deg+1,A=Array.from({length:n},()=>new Float64Array(n+1));
+  // base de Legendre p/ estabilidade
+  const basis=x=>{const P=[1,x];for(let k=2;k<n;k++)P.push(((2*k-1)*x*P[k-1]-(k-1)*P[k-2])/k);return P.slice(0,n);};
+  for(const [x,y] of pts){const p=basis(x);for(let i=0;i<n;i++){for(let j=0;j<n;j++)A[i][j]+=p[i]*p[j];A[i][n]+=p[i]*y;}}
+  for(let i=0;i<n;i++)A[i][i]+=1e-9;
+  for(let i=0;i<n;i++){let mx=i;for(let k=i+1;k<n;k++)if(Math.abs(A[k][i])>Math.abs(A[mx][i]))mx=k;[A[i],A[mx]]=[A[mx],A[i]];
+    for(let k=0;k<n;k++)if(k!==i){const f=A[k][i]/A[i][i];for(let j=i;j<=n;j++)A[k][j]-=f*A[i][j];}}
+  const c=A.map((row,i)=>row[n]/row[i]);return x=>basis(x).reduce((s,p,i)=>s+p*c[i],0);}
+function polyUpd(){const p=+$('#polyDeg').value,deg=p-1,f=fitPoly(poly.tr,deg);
+  const er=pts=>Math.sqrt(pts.reduce((s,[x,y])=>s+(f(x)-y)**2,0)/pts.length);const etr=er(poly.tr),ete=er(poly.te);
+  $('#polyLbl').textContent=p;$('#polyTr').textContent=fmt(etr);$('#polyTe').textContent=fmt(ete);
+  let v;if(p<=3)v=['🔵 <b>Pequeno demais (<i>underfitting</i>)</b>: o modelo é simples demais e não consegue acompanhar a curva. Erra no treino e nos dados novos.','--reg'];
+  else if(p<=7)v=['✅ <b>Na medida certa</b>: segue a tendência sem decorar o ruído. Erro baixo também em dados novos. É o que Ockham recomenda.','--pinn'];
+  else v=['🟠 <b>Grande demais (<i>overfitting</i>)</b>: o modelo "decora" o ruído dos pontos de treino. O erro de treino cai, mas o erro em dados novos <b>sobe</b>.','--mlp'];
+  $('#polyVerdict').innerHTML=v[0];
+  poly.plot.draw({lines:[{f:fTrue,color:css('--real'),w:2,dash:[6,4]},{f,color:css(v[1]),w:3}],dots:[{pts:poly.te,color:css('--ink2'),r:3.5,hollow:true},{pts:poly.tr,color:css('--real'),r:4.5}]});}
+$('#polyDeg').oninput=polyUpd;redrawers.push(polyUpd);
+// ---- busca do tamanho ----
+const SIZES=[1,2,4,8,16,32,64,128];
+function ySigF(t){return 0.85*Math.sin(1.5*t)+0.35*Math.cos(2.8*t)+0.08*t;}
+const size={fit:new Plot($('#sizeFit'),{x:[0,10],y:[-1.8,2.2],xl:'tempo (s)'}),res:[],stop:null,chosen:-1};
+(function(){const r=rng(21);const all=linspace(0,10,40).map(t=>[t+(r()-.5)*0.2,0]);all.forEach(p=>p[1]=ySigF(p[0])+0.15*gauss(r));
+  size.tr=all.filter((_,i)=>i%3!==1);size.va=all.filter((_,i)=>i%3===1);})();
+function sizeErr(){const cv=$('#sizeErr');const {x,W,H}=canvasCtx(cv);x.fillStyle=css('--card');x.fillRect(0,0,W,H);
+  const pl=40,pr=10,pt=12,pb=40,iw=W-pl-pr,ih=H-pt-pb,ymax=0.8,X=i=>pl+(i+.5)/SIZES.length*iw,Y=v=>pt+(1-Math.min(v,ymax)/ymax)*ih;
+  x.font='11px system-ui';x.strokeStyle=css('--line');x.fillStyle=css('--ink2');x.textAlign='right';
+  for(const v of [0,0.2,0.4,0.6,0.8]){x.beginPath();x.moveTo(pl,Y(v));x.lineTo(pl+iw,Y(v));x.stroke();x.fillText(String(v).replace('.',','),pl-4,Y(v)+4);}
+  x.textAlign='center';SIZES.forEach((s,i)=>x.fillText(s,X(i),H-pb+15));x.fillText('neurônios na camada oculta',pl+iw/2,H-4);
+  if(size.chosen>=0){x.fillStyle=css('--accentSoft');x.fillRect(X(size.chosen)-iw/SIZES.length/2,pt,iw/SIZES.length,ih);}
+  for(const [k,col] of [['tr',css('--ink2')],['va',css('--reg')]]){x.strokeStyle=col;x.fillStyle=col;x.lineWidth=2.2;x.beginPath();
+    size.res.forEach((r,i)=>{i?x.lineTo(X(i),Y(r[k])):x.moveTo(X(i),Y(r[k]));});x.stroke();size.res.forEach((r,i)=>{x.beginPath();x.arc(X(i),Y(r[k]),3.5,0,7);x.fill();});}
+  if(size.chosen>=0){const r=size.res[size.chosen];x.beginPath();x.arc(X(size.chosen),Y(r.va),7,0,7);x.strokeStyle=css('--pinn');x.lineWidth=3;x.stroke();
+    x.fillStyle=css('--pinn');x.font='600 12px system-ui';x.fillText('escolhida',X(size.chosen),Y(r.va)-12);}}
+function sizeFitDraw(net,o,m,H){size.fit.draw({lines:[{f:ySigF,color:css('--real'),w:2,dash:[6,4]},...(net?[{f:t=>o+m*net.out(t),color:css('--reg'),w:2.8}]:[])],
+  dots:[{pts:size.va,color:css('--reg'),r:4,hollow:true},{pts:size.tr,color:css('--real'),r:3.5}]});
+  $('#sizeFitLbl').textContent=net?`Rede com ${H} neurônio${H>1?'s':''}`:'Dados: treino (cheios) e validação (vazados)';}
+function sizeRun(){size.stop&&size.stop();size.res=[];size.chosen=-1;$('#sizeRun').disabled=true;const Y=size.tr.map(p=>p[1]),{o,m}=normOf(Y);
+  const cfg={dT:size.tr.map(p=>p[0]),dY:Y.map(v=>(v-o)/m),lam:0,lr:0.01};let q=0;
+  (function next(){if(q>=SIZES.length){const best=Math.min(...size.res.map(r=>r.va));size.chosen=size.res.findIndex(r=>r.va<=best*1.1);sizeErr();
+      const c=size.res[size.chosen],bi=size.res.findIndex(r=>r.va===best);
+      $('#sizeTxt').innerHTML=(bi===size.chosen?`✅ O menor erro de validação foi com <b>${SIZES[bi]} neurônios</b> (${fmt(best)}). <b>Escolhemos ela.</b>`
+        :`✅ O menor erro de validação foi com <b>${SIZES[bi]} neurônios</b> (${fmt(best)}). Mas a rede de <b>${SIZES[size.chosen]} neurônios</b> chegou a ${fmt(c.va)} — dentro de 10% do melhor, e bem menor. <b>Escolhemos ela.</b>`)
+        +`<br>Repare: o erro de <b>treino</b> continua caindo com redes maiores, mas o de <b>validação</b> não melhora (ou piora). Esse é o sinal de que a rede começou a <b>decorar o ruído</b>.`;
+      $('#sizeProg').textContent='';$('#sizeRun').disabled=false;return;}
+    const H=SIZES[q],net=new Net(H,8,0,10,3);
+    size.stop=runBudget(()=>net.step(cfg),4000,(e,t)=>{$('#sizeProg').textContent=`Treinando rede de ${H} neurônio${H>1?'s':''}… ${Math.round(e/t*100)}%`;sizeFitDraw(net,o,m,H);},
+      ()=>{const er=P=>Math.sqrt(P.reduce((s,[t,y])=>s+(o+m*net.out(t)-y)**2,0)/P.length);size.res.push({tr:er(size.tr),va:er(size.va)});sizeFitDraw(net,o,m,H);sizeErr();q++;next();});})();}
+$('#sizeRun').onclick=sizeRun;redrawers.push(()=>{sizeErr();size.fit.draw();});
+// ---- camadas: largura x profundidade (dobrar o papel) ----
+// cada camada = 2 ReLUs que formam o "chapéu" h(x)=2·ReLU(x)−4·ReLU(x−0,5): compor L vezes dá 2^L pedaços de reta
+const lay={plot:new Plot($('#layFold'),{x:[0,1],y:[-0.08,1.18],xl:'entrada',yl:'saída'})};
+const tentPts=L=>{const n=2**L;return Array.from({length:n+1},(_,k)=>[k/n,k%2]);};
+function layNet(L){const {x,W,H}=canvasCtx($('#layNet'));x.fillStyle=css('--card');x.fillRect(0,0,W,H);
+  const cols=[1,...Array(L).fill(2),1],nc=cols.length,pad=24,X=i=>pad+i*(W-2*pad)/(nc-1),cy=H/2-12,ys=n=>n===1?[cy]:[cy-34,cy+34];
+  const r=Math.max(5,Math.min(11,(W-2*pad)/(nc-1)/3));
+  x.strokeStyle=css('--line');x.lineWidth=1.4;
+  for(let i=0;i<nc-1;i++)for(const a of ys(cols[i]))for(const b of ys(cols[i+1])){x.beginPath();x.moveTo(X(i),a);x.lineTo(X(i+1),b);x.stroke();}
+  cols.forEach((n,i)=>{x.fillStyle=css(i===0?'--real':i===nc-1?'--pinn':'--warn');for(const y of ys(n)){x.beginPath();x.arc(X(i),y,r,0,7);x.fill();}});
+  x.fillStyle=css('--ink2');x.font='11px system-ui';x.textAlign='center';
+  x.fillText('t',X(0),cy-r-6);x.fillText('entrada',X(0),H-10);x.fillText('saída',X(nc-1),H-10);
+  x.font='600 12px system-ui';x.fillStyle=css('--warn');x.fillText(L===1?'1 camada oculta':`${L} camadas ocultas`,W/2,22);}
+function layUpd(){const L=+$('#layL').value,P=2**L,deep=2*L,shallow=P; // 1 camada: cada neurônio cria 1 dobra; as inclinações alternadas (±2^L) exigem 2^L neurônios em [0,1]
+  $('#layLbl').textContent=L;$('#layP').textContent=P;$('#layD').textContent=deep;$('#layS').textContent=shallow;layNet(L);
+  lay.plot.draw({lines:[...(L>1?[{pts:tentPts(L-1),color:css('--ink2'),w:1.6,dash:[4,4],alpha:.7}]:[]),{pts:tentPts(L),color:css('--warn'),w:2.4}]});
+  $('#layTxt').innerHTML=deep>=shallow
+    ?`${L} dobra${L>1?'s':''} = <b>${P} pedaços</b>. Empilhando: ${deep} neurônios. Numa camada só: ${shallow}. <b>Empate</b>: para formas simples, empilhar não ajuda. Continue arrastando →`
+    :`✅ ${L} camadas com 2 neurônios cada = <b style="color:var(--pinn)">${deep} neurônios</b>, e a curva já tem <b>${P} pedaços</b>. Para fazer o mesmo numa camada só, seriam precisos <b style="color:var(--mlp)">${shallow} neurônios</b>: ${(shallow/deep).toFixed(1).replace('.',',').replace(',0','')}× mais. <b>Empilhar multiplica; alargar só soma.</b>`
+    +(L>=6?`<br><span class="note">Esta curva foi escolhida para mostrar a vantagem. Em curvas lisas como a da mola, 1 camada continua bastando.</span>`:'');}
+$('#layL').oninput=layUpd;redrawers.push(layUpd);new ResizeObserver(()=>layNet(+$('#layL').value)).observe($('#layNet'));
+// ---- ativação: formas ----
+function actShapes(){$$('#actShapes canvas').forEach(cv=>{const {x,W,H}=canvasCtx(cv);x.fillStyle=css('--soft');x.fillRect(0,0,W,H);const k=cv.dataset.act;
+  const col={relu:css('--warn'),tanh:css('--reg'),sin:css('--pinn')}[k],f={relu:z=>Math.max(0,z)/2.2-0.6,tanh:z=>Math.tanh(z)*0.8,sin:z=>Math.sin(z*1.6)*0.8}[k];
+  x.strokeStyle=css('--line');x.beginPath();x.moveTo(0,H/2);x.lineTo(W,H/2);x.stroke();x.strokeStyle=col;x.lineWidth=3;x.beginPath();
+  for(let i=0;i<=100;i++){const z=-3+6*i/100,px=i/100*W,py=H/2-f(z)*H*0.42;i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();});}
+// ---- ativação: teste na mola ----
+const actT={plot:new Plot($('#actChart'),{x:[0,10],y:[-1.6,1.6],shade:[6,10],shadeLabel:'futuro (sem sensores)',xl:'tempo (s)'}),nets:null,stop:null};
+const ACTS=[['relu','--warn',3],['tanh','--reg',3],['sin','--pinn',2]];
+function actDraw(){const r=rng(7);const dT=linspace(0.2,6,15),dY=dT.map(t=>xOsc(t)+0.03*gauss(r));actT.D={dT,dY};
+  const L={lines:[{f:xOsc,color:css('--real'),w:2,dash:[6,4]}],dots:[{pts:dT.map((t,k)=>[t,dY[k]]),color:css('--real'),r:3}]};
+  if(actT.nets)actT.nets.forEach((n,i)=>L.lines.push({f:t=>n.out(t),color:css(ACTS[i][1]),w:2.6}));actT.plot.draw(L);
+  if(actT.nets)actT.nets.forEach((n,i)=>$('#actE'+i).textContent=fmt(rmseF(xOsc,t=>n.out(t),0,10)));}
+function actRun(){actT.stop&&actT.stop();actDraw();const cfg=oscCfg(actT.D.dT,actT.D.dY,1);actT.nets=ACTS.map(([a,,ws])=>new Net(32,11,0,10,ws,a));$('#actRun').disabled=true;
+  actT.stop=runBudget(()=>actT.nets.forEach(n=>n.step(cfg)),5000,(e,t)=>{$('#actProg').textContent=`${Math.round(e/t*100)}%`;actDraw();},
+    ()=>{$('#actRun').disabled=false;$('#actProg').textContent='';const e=actT.nets.map(n=>rmseF(xOsc,t=>n.out(t),0,10));
+      $('#actTxt').innerHTML=`❌ A <b>ReLU</b> errou ${fmt(e[0])} — <b>mesmo onde havia sensores</b>. Como a aceleração dela é zero, a equação vira outra coisa e puxa a curva para o lugar errado.<br>✅ <b>tanh</b> (${fmt(e[1])}) e <b>seno</b> (${fmt(e[2])}) acertam: são lisas e têm aceleração. Escolher a peça certa vale mais que aumentar a rede.`;});}
+$('#actRun').onclick=actRun;redrawers.push(()=>{actShapes();actDraw();});
+onShow[2]=()=>{polyUpd();layUpd();actShapes();if(!actT.plot.layers)actDraw();sizeErr();if(!size.fit.layers)sizeFitDraw(null);};
+
+
+/* ======================= 3. Q25 café ======================= */
+const COOL={k:0.35,T0:90,Ta:20,end:12};const Tc=t=>COOL.Ta+(COOL.T0-COOL.Ta)*Math.exp(-COOL.k*t);
+const cool={plot:null,anim:null,nets:null};
+cool.plot=new Plot($('#coolChart'),{x:[0,12],y:[-10,95],shade:[4,12],shadeLabel:'futuro (sem sensores)',xl:'tempo (min)',yl:'°C'});
+function coolRun(){cancelAnimationFrame(cool.anim);const until=+$('#coolUntil .on').dataset.v,lam=+$('#coolLam .on').dataset.v;
+  cool.plot.o.shade=[until,12];const r=rng(5);const dT=linspace(0,until,6),Y=dT.map(t=>Tc(t)+0.6*gauss(r));const {o,m}=normOf(Y);const dY=Y.map(v=>(v-o)/m);
+  const nM=new Net(16,3,0,12,2),nP=new Net(16,3,0,12,2);
+  const base={dT,dY,cT:linspace(0,12,60),res:normRes({a2:0,a1:1,a0:COOL.k,b:-COOL.k*COOL.Ta},o,m),lr:0.02};
+  const cM={...base,lam:0},cP={...base,lam};let ep=0,TOT=1500,tM=0,tP=0;
+  const fM=t=>o+m*nM.out(t),fP=t=>o+m*nP.out(t);
+  (function loop(){for(let i=0;i<20&&ep<TOT;i++,ep++){let a=performance.now();nM.step(cM);tM+=performance.now()-a;a=performance.now();nP.step(cP);tP+=performance.now()-a;}
+    cool.plot.draw({lines:[{f:Tc,color:css('--real'),w:2,dash:[6,4]},{f:fM,color:css('--mlp'),w:2.8},{f:fP,color:css('--pinn'),w:2.8}],dots:[{pts:dT.map((t,i)=>[t,Y[i]]),color:css('--real'),r:4}],hlines:[{y:20,label:'temperatura da sala (20 °C)',color:css('--warn')}]});
+    const e1=rmseF(Tc,fM,until,12),e2=rmseF(Tc,fP,until,12);$('#coolE1').textContent=fmt(e1)+' °C';$('#coolE2').textContent=fmt(e2)+' °C';
+    $('#coolT1').textContent=fmt(tM,0)+' ms';$('#coolT2').textContent=fmt(tP,0)+' ms';
+    if(ep<TOT){cool.anim=requestAnimationFrame(loop);$('#coolVerdict').textContent=`Treinando… ${ep}/${TOT} passos`;}
+    else{let minM=1e9;for(let t=until;t<=12;t+=0.1)minM=Math.min(minM,fM(t));
+      let s=minM<19?`⚠️ A rede comum chegou a <b>${fmt(minM)} °C</b> — mais frio que a sala, o que é <b>impossível</b>. Ela só continuou a tendência de queda. `:`A rede comum não passou da sala desta vez, mas ainda erra a curva. `;
+      s+=lam>0?`A PINN, que conhece a lei de Newton, desacelera e para em 20 °C (erro ${fmt(e2)} °C).`:`Com λ = 0 a PINN <b>não usa física</b> — virou uma rede comum.`;
+      s+=` Note também o custo: a PINN levou <b>${fmt(tP/Math.max(tM,0.1),1)}×</b> mais tempo.`;
+      $('#coolVerdict').innerHTML=s;}})();}
+segment('#coolUntil',coolRun);segment('#coolLam',coolRun);redrawers.push(()=>cool.plot.draw());
+onShow[3]=()=>{coolRun();};
+
+/* ======================= 4. Q26 carrinho ======================= */
+const CAR={v:2,x0:1};const xCar=t=>CAR.x0+CAR.v*t;
+const car={plot:new Plot($('#carChart'),{x:[0,10],y:[-2,26],shade:[5,10],shadeLabel:'futuro (sem sensores)',xl:'tempo (s)',yl:'posição (m)'}),anim:null,net:null,reg:null};
+(function(){const r=rng(4);car.dT=linspace(0.3,5,8);car.Y=car.dT.map(t=>xCar(t)+0.3*gauss(r));})();
+function carRun(){cancelAnimationFrame(car.anim);const vp=+$('#vPinn').value;$('#vLbl').textContent=vp.toFixed(1).replace('.',',');
+  // regressão (mínimos quadrados)
+  let a0=performance.now();const n=car.dT.length,mt=car.dT.reduce((s,t)=>s+t,0)/n,my=car.Y.reduce((s,y)=>s+y,0)/n;let sxy=0,sxx=0;car.dT.forEach((t,i)=>{sxy+=(t-mt)*(car.Y[i]-my);sxx+=(t-mt)**2;});
+  const sl=sxy/sxx,ic=my-sl*mt;const tReg=performance.now()-a0;car.reg=t=>ic+sl*t;
+  const {o,m}=normOf(car.Y),dY=car.Y.map(v=>(v-o)/m);const net=new Net(12,4,0,10,1.5);car.net=t=>o+m*net.out(t);
+  const cfg={dT:car.dT,dY,cT:linspace(0,10,50),res:normRes({a2:0,a1:1,a0:0,b:-vp},o,m),lam:2,lr:0.02};let ep=0,TOT=800,tP=0;
+  const e1=rmseF(xCar,car.reg,5,10);$('#carE1').textContent=fmt(e1)+' m';$('#carP1').textContent=`2 · ${tReg<0.1?'<0,1':fmt(tReg,2)} ms`;
+  (function loop(){const a=performance.now();for(let i=0;i<20&&ep<TOT;i++,ep++)net.step(cfg);tP+=performance.now()-a;
+    carDraw();const e2=rmseF(xCar,car.net,5,10);$('#carE2').textContent=fmt(e2)+' m';$('#carP2').textContent=`${net.nParams} · ${fmt(tP,0)} ms`;
+    if(ep<TOT)car.anim=requestAnimationFrame(loop);
+    else $('#carVerdict').innerHTML=Math.abs(vp-2)<0.05?`Com a velocidade <b>exata</b>, a PINN acerta (erro ${fmt(e2)} m). Mas repare: se você já sabe a velocidade, a resposta é a fórmula <b>x = x₀ + v·t</b> — não precisa de rede nenhuma! E basta errar a velocidade um pouco (mexa o controle) para a PINN perder para a regressão.`
+      :e1<e2?`🔵 A <b>regressão venceu</b>: erro ${fmt(e1)} m contra ${fmt(e2)} m, com 2 parâmetros e sem treino. A PINN foi "puxada" pela física errada (${vp.toFixed(1).replace('.',',')} m/s) justo no futuro, onde não há sensor para corrigir. Rede neural aqui = <b>mais custo e mais risco</b>.`
+      :`Com a velocidade quase certa, a PINN ficou próxima (erro ${fmt(e2)} m vs ${fmt(e1)} m). Mas ela custou ${net.nParams} parâmetros e ${fmt(tP,0)} ms de treino — e só funcionou porque já sabíamos a resposta. Pela <b>Navalha de Ockham</b>, a regressão continua sendo a escolha sensata.`;})();}
+function carDraw(t){car.plot.draw({lines:[{f:xCar,color:css('--real'),w:2,dash:[6,4]},{f:car.reg,color:css('--reg'),w:2.8},...(car.net?[{f:car.net,color:css('--pinn'),w:2.8}]:[])],
+  dots:[{pts:car.dT.map((t,i)=>[t,car.Y[i]]),color:css('--real'),r:4}],cursor:t??null,marks:t!=null?[{y:xCar(t),color:css('--real')},{y:car.reg(t),color:css('--reg')},{y:car.net(t),color:css('--pinn')}]:[]});
+  trackDraw(t??0);}
+function trackDraw(t){const cv=$('#carTrack');const {x,W}=canvasCtx(cv);x.fillStyle=css('--card');x.fillRect(0,0,W,130);
+  const L=60,R=W-20,X=p=>L+(p/24)*(R-L);x.strokeStyle=css('--line');x.lineWidth=1;x.font='11px system-ui';x.fillStyle=css('--ink2');x.textAlign='center';
+  for(let p=0;p<=24;p+=4){x.beginPath();x.moveTo(X(p),10);x.lineTo(X(p),112);x.stroke();x.fillText(p+' m',X(p),126);}
+  const rows=[['Real',css('--real'),xCar],['Regressão',css('--reg'),car.reg],['PINN',css('--pinn'),car.net]];
+  rows.forEach(([lb,col,f],i)=>{const y=24+i*32;x.fillStyle=css('--ink2');x.textAlign='left';x.font='600 12px system-ui';x.fillText(lb,4,y+5);
+    if(!f)return;const p=Math.max(-1,Math.min(24,f(t)));x.fillStyle=col;x.beginPath();x.roundRect?x.roundRect(X(p)-14,y-9,28,16,4):x.rect(X(p)-14,y-9,28,16);x.fill();
+    x.fillStyle=css('--card');x.beginPath();x.arc(X(p)-7,y+8,3.5,0,7);x.arc(X(p)+7,y+8,3.5,0,7);x.fill();});
+  x.fillStyle=t>5?css('--futureInk'):css('--ink2');x.textAlign='right';x.font='600 13px system-ui';x.fillText(`t = ${t.toFixed(1).replace('.',',')} s${t>5?' · futuro':''}`,W-8,14);}
+$('#vPinn').oninput=carRun;
+$('#carPlay').onclick=()=>{cancelAnimationFrame(car.anim2);const t0=performance.now();(function f(){const t=Math.min(10,(performance.now()-t0)/1000*1.1);carDraw(t);if(t<10)car.anim2=requestAnimationFrame(f);})();};
+redrawers.push(()=>car.reg&&carDraw());
+// sinal sem lei
+const ySig=t=>0.85*Math.sin(1.5*t)+0.35*Math.cos(2.8*t)+0.08*t;
+const sig={plot:new Plot($('#sigChart'),{x:[0,10],y:[-1.6,2],xl:'tempo (s)',yl:'sinal'}),anim:null};
+(function(){const r=rng(21);sig.dT=linspace(0,10,25);sig.Y=sig.dT.map(t=>ySig(t)+0.05*gauss(r));})();
+function sigRun(){cancelAnimationFrame(sig.anim);const {o,m}=normOf(sig.Y),dY=sig.Y.map(v=>(v-o)/m);
+  const n=sig.dT.length,mt=5,my=sig.Y.reduce((s,y)=>s+y,0)/n;let sxy=0,sxx=0;sig.dT.forEach((t,i)=>{sxy+=(t-mt)*(sig.Y[i]-my);sxx+=(t-mt)**2;});const sl=sxy/sxx,reg=t=>my+sl*(t-mt);
+  const nM=new Net(24,8,0,10,3),nP=new Net(24,8,0,10,3);const base={dT:sig.dT,dY,cT:linspace(0,10,60),res:{a2:0,a1:1,a0:0,b:0},lr:0.01};
+  const fM=t=>o+m*nM.out(t),fP=t=>o+m*nP.out(t);let ep=0,TOT=3000;$('#sigE2').textContent=fmt(rmseF(ySig,reg,0,10));
+  (function loop(){for(let i=0;i<30&&ep<TOT;i++,ep++){nM.step({...base,lam:0});nP.step({...base,lam:1.2});}
+    sig.plot.draw({lines:[{f:ySig,color:css('--real'),w:2,dash:[6,4]},{f:reg,color:css('--reg'),w:2.5},{f:fP,color:css('--pinn'),w:2.5},{f:fM,color:css('--mlp'),w:3}],dots:[{pts:sig.dT.map((t,i)=>[t,sig.Y[i]]),color:css('--real'),r:3.5}]});
+    $('#sigE1').textContent=fmt(rmseF(ySig,fM,0,10));$('#sigE3').textContent=fmt(rmseF(ySig,fP,0,10));
+    if(ep<TOT)sig.anim=requestAnimationFrame(loop);})();}
+$('#sigTrain').onclick=sigRun;
+/* ---- 3 duelos: cada problema tem um vencedor ---- */
+function olsFit(T,Y){const n=T.length,mt=T.reduce((a,b)=>a+b)/n,my=Y.reduce((a,b)=>a+b)/n;let sxy=0,sxx=0;T.forEach((t,i)=>{sxy+=(t-mt)*(Y[i]-my);sxx+=(t-mt)**2;});const sl=sxy/sxx;return t=>my+sl*(t-mt);}
+const DUELS=[
+ {ic:'☕',name:'Café esfriando',sub:'6 sensores só até 4 min · lei física certa',f:Tc,T:[0,12],y:[-10,95],dT:linspace(0,4,6),noise:0.6,seed:5,err:[4,12],unit:' °C',
+  res:{a2:0,a1:1,a0:0.35,b:-7},lam:1,H:16,ws:2,ns:3,steps:1500,lr:0.02,pinnLbl:'PINN (lei de Newton)',
+  why:'Poucos dados e uma lei física <b>confiável</b>: a física completa o que os sensores não mostram. A reta e a rede comum seguem caindo abaixo da temperatura da sala.'},
+ {ic:'🚗',name:'Carrinho em linha reta',sub:'8 sensores até 5 s · PINN com velocidade errada (1,3 m/s)',f:xCar,T:[0,10],y:[-2,26],dT:linspace(0.3,5,8),noise:0.3,seed:4,err:[5,10],unit:' m',
+  res:{a2:0,a1:1,a0:0,b:-1.3},lam:2,H:12,ws:1.5,ns:4,steps:800,lr:0.02,pinnLbl:'PINN (v errada)',
+  why:'O fenômeno <b>é uma reta</b>: 2 parâmetros bastam, sem treino. A rede comum não sabe extrapolar e a PINN é puxada pela física errada.'},
+ {ic:'〰️',name:'Sinal sem lei conhecida',sub:'25 sensores espalhados · nenhuma equação',f:ySig,T:[0,10],y:[-1.6,2],dT:linspace(0,10,25),noise:0.05,seed:21,err:[0,10],unit:'',
+  res:{a2:0,a1:1,a0:0,b:0},lam:1.2,H:24,ws:3,ns:8,steps:3000,lr:0.01,pinnLbl:'PINN (física inventada)',
+  why:'<b>Muitos dados</b>, curva complexa e <b>nenhuma lei</b> conhecida: a rede comum aprende a forma direto dos dados. A reta não curva e a PINN fica presa à física inventada.'}];
+const WINC={mlp:'--mlp',pinn:'--pinn',reg:'--reg'};
+$('#duels').innerHTML=DUELS.map((d,i)=>`<div class="duel"><h4>${d.ic} ${d.name}</h4><div class="sub">${d.sub}</div><canvas id="duelCv${i}" height="170"></canvas><div class="rank" id="duelRk${i}"><div class="note">—</div></div><div class="why" id="duelWhy${i}"></div></div>`).join('');
+DUELS.forEach((d,i)=>{const r=rng(d.seed);d.Y=d.dT.map(t=>d.f(t)+d.noise*gauss(r));d.reg=olsFit(d.dT,d.Y);
+  d.plot=new Plot($('#duelCv'+i),{x:d.T,y:d.y,shade:d.err[0]>d.T[0]?[d.err[0],d.T[1]]:null,shadeLabel:'sem sensores'});});
+function duelDraw(i){const d=DUELS[i],L={lines:[{f:d.f,color:css('--real'),w:2,dash:[6,4]},{f:d.reg,color:css('--reg'),w:2.2}],dots:[{pts:d.dT.map((t,k)=>[t,d.Y[k]]),color:css('--real'),r:2.6}]};
+  if(d.fM)L.lines.push({f:d.fM,color:css('--mlp'),w:2.2});if(d.fP)L.lines.push({f:d.fP,color:css('--pinn'),w:2.2});d.plot.draw(L);}
+function duelRank(i){const d=DUELS[i],rows=[['reg','Regressão',d.reg],['mlp','Rede comum',d.fM],['pinn',d.pinnLbl,d.fP]].filter(r=>r[2]).map(r=>[...r,rmseF(d.f,r[2],d.err[0],d.err[1])]).sort((a,b)=>a[3]-b[3]);
+  const med=['🥇','🥈','🥉'];$('#duelRk'+i).innerHTML=rows.map((r,k)=>`<div class="${k===0&&rows.length===3?'win':''}" style="color:var(${WINC[r[0]]})"><span>${med[k]} ${r[1]}</span><span>erro ${fmt(r[3])}${d.unit}</span></div>`).join('');
+  if(rows.length===3)$('#duelWhy'+i).innerHTML=`<span class="crown" style="background:var(${WINC[rows[0][0]]})">Vence: ${rows[0][1].split(' (')[0]}</span><br>${d.why}`;}
+function duelRun(){let q=0;$('#duelRun').disabled=true;DUELS.forEach((d,i)=>{d.fM=d.fP=null;$('#duelWhy'+i).innerHTML='';duelRank(i);duelDraw(i);});
+  (function next(){if(q>=DUELS.length){$('#duelRun').disabled=false;$('#duelProg').textContent='';return;}
+    const d=DUELS[q],i=q,{o,m}=normOf(d.Y),dY=d.Y.map(v=>(v-o)/m),nM=new Net(d.H,d.ns,d.T[0],d.T[1],d.ws),nP=new Net(d.H,d.ns,d.T[0],d.T[1],d.ws);
+    const base={dT:d.dT,dY,cT:linspace(d.T[0],d.T[1],60),res:normRes(d.res,o,m),lr:d.lr};d.fM=t=>o+m*nM.out(t);d.fP=t=>o+m*nP.out(t);
+    runBudget(()=>{nM.step({...base,lam:0});nP.step({...base,lam:d.lam});},d.steps,(e,t)=>{$('#duelProg').textContent=`Duelo ${i+1}/3… ${Math.round(e/t*100)}%`;duelDraw(i);},()=>{duelRank(i);duelDraw(i);q++;next();});})();}
+$('#duelRun').onclick=duelRun;redrawers.push(()=>DUELS.forEach((d,i)=>duelDraw(i)));
+$('#funnel').onclick=e=>{const s=e.target.closest('.fstep');if(s)s.classList.toggle('open');};
+function sigIdle(){sig.plot.draw({lines:[{f:ySig,color:css('--real'),w:2,dash:[6,4]}],dots:[{pts:sig.dT.map((t,i)=>[t,sig.Y[i]]),color:css('--real'),r:3.5}]});}
+redrawers.push(()=>sig.plot.draw());
+onShow[4]=()=>{if(!car.reg)carRun();else carDraw();if(!sig.plot.layers)sigIdle();DUELS.forEach((d,i)=>duelDraw(i));};
+
+/* ======================= 5. árvore de decisão + quiz ======================= */
+const TREE={
+  start:{q:'O problema é simples? (uma reta, uma fórmula conhecida)',o:[['Sim','r_simple'],['Não','law']]},
+  law:{q:'Existe uma lei física confiável (uma equação) para o fenômeno?',o:[['Sim','few'],['Não','data']]},
+  few:{q:'Tenho poucos dados ou preciso prever onde não há sensores?',o:[['Sim','r_pinn'],['Não, só quero resolver a equação','r_solver']]},
+  data:{q:'Tenho muitos dados cobrindo bem o problema?',o:[['Sim','r_mlp'],['Não','r_more']]},
+  r_simple:{r:'📈 <b>Método clássico</b> (regressão, fórmula). Rápido, exato e explicável. Rede neural seria exagero — Questão 26.'},
+  r_pinn:{r:'🌀 <b>PINN!</b> A física preenche a falta de dados. É o caso da mola e do café.'},
+  r_solver:{r:'🧮 <b>Solver numérico</b> (ex.: Runge-Kutta). Para só resolver uma equação conhecida, costuma ser mais rápido e preciso que uma PINN.'},
+  r_mlp:{r:'🧠 <b>Rede neural comum</b> (MLP, CNN, RNN… conforme o tipo de dado — Questão 24).'},
+  r_more:{r:'📦 <b>Colete mais dados</b> ou use um modelo bem simples. Sem dados e sem lei, nenhuma rede faz milagre — Questão 25.'}};
+let treePath=[];
+function treeShow(id){const n=TREE[id];$('#treePath').textContent=treePath.join('  →  ');
+  if(n.r){$('#treeBody').innerHTML=`<div class="result">${n.r}</div>`;return;}
+  $('#treeBody').innerHTML=`<div class="q">${n.q}</div><div class="btns">${n.o.map((o,i)=>`<button class="b${i?'':' primary'}" data-t="${o[1]}" data-l="${o[0]}">${o[0]}</button>`).join('')}</div>`;}
+$('#treeBody').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;treePath.push(b.dataset.l);treeShow(b.dataset.t);};
+$('#treeReset').onclick=()=>{treePath=[];treeShow('start');};treeShow('start');
+const QUIZ=[
+ ['Por que a ReLU não serve para a PINN da mola?',['Porque a 2ª derivada dela é zero','Porque ela é lenta demais'],0,'A equação da mola usa a aceleração (2ª derivada). Com ReLU ela é sempre zero.'],
+ ['O que a PINN tem a mais que uma rede comum?',['Mais camadas e neurônios','A equação física dentro da conta do erro'],1,'A arquitetura pode ser a mesma; muda a <i>loss</i> (a conta do erro).'],
+ ['Na simulação do café, por que a rede comum errou?',['Ela continuou a tendência de queda fora dos dados','Ela tinha poucos neurônios'],0,'Fora dos dados a rede só extrapola a tendência — é o principal limite (Q25).'],
+ ['Pela Navalha de Ockham, qual modelo escolher?',['O maior possível, por segurança','O mais simples que resolve bem'],1,'Modelos grandes demais decoram o ruído (<i>overfitting</i>).'],
+ ['No carrinho em linha reta, quem venceu?',['A regressão linear','A PINN'],0,'2 parâmetros bastam, e a PINN foi puxada pela física errada (Q26).'],
+ ['Quando a PINN pode atrapalhar?',['Quando a equação física dada a ela está errada','Quando temos poucos sensores'],0,'A PINN confia na equação. Equação errada = previsão errada.']];
+let score=0;
+$('#quiz').innerHTML=QUIZ.map((q,i)=>`<div class="item" data-i="${i}"><b>${i+1}. ${q[0]}</b><div class="opts">${q[1].map((o,j)=>`<button data-j="${j}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('');
+$('#quiz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const it=b.closest('.item');if(it.dataset.done)return;it.dataset.done=1;const q=QUIZ[+it.dataset.i],j=+b.dataset.j;
+  b.classList.add(j===q[2]?'ok':'no');it.querySelectorAll('button')[q[2]].classList.add('ok');if(j===q[2])score++;$('#score').textContent=score;
+  it.querySelector('.fb').innerHTML=(j===q[2]?'✅ Isso! ':'❌ Quase. ')+q[3];};
+
+/* ======================= ajuda "?" ao lado de cada simulação ======================= */
+const HELP={
+ oscChart:['Como ler: a mola',`<ul><li><b>Eixo horizontal:</b> tempo, em segundos.</li><li><b>Eixo vertical:</b> posição da massa (1 = onde ela foi solta; 0 = parada no meio).</li><li><b>Linha tracejada</b> = movimento real. <b>Pontos</b> = sensores (com um pouco de ruído).</li><li><b>Faixa amarela</b> = "futuro": ninguém mediu nada ali.</li><li><b style="color:var(--mlp)">Laranja</b> = rede comum; <b style="color:var(--pinn)">verde</b> = PINN.</li><li>Os cartões mostram o <b>erro no futuro</b>: quanto, em média, a curva ficou longe da real. Menor é melhor.</li></ul><b>Experimente:</b> trocar para 6 sensores, sortear "Novos sensores" e clicar em "Ver as molas" para ver o movimento.`],
+ sensBars:['Como ler: mais sensores',`<ul><li>Cada grupo de barras é uma situação (quantos sensores e em que trecho).</li><li><b>Altura da barra</b> = erro no futuro (6–10 s). Mais baixa = melhor.</li><li>A escala pula de 10 em 10: cada linha de grade é um erro 10× menor.</li><li>O grupo com fundo amarelo tem sensores até 10 s — não sobra futuro para adivinhar.</li><li>Passe o mouse (ou toque) numa barra para ver as curvas daquela situação à direita.</li></ul>`],
+ lamChart:['Como ler: o λ',`<ul><li>A <b>balança</b> mostra quem pesa mais na conta do erro: os sensores ou a física.</li><li>No gráfico: tracejado = real, pontos = sensores, <b style="color:var(--pinn)">verde</b> = PINN, <b style="color:var(--warn)">vermelho pontilhado</b> = o que a equação errada prevê.</li><li>Os cartões separam o erro onde há sensores e no futuro.</li></ul><b>Experimente:</b> com a equação errada, compare λ = 0,01 e λ = 100.`],
+ polyChart:['Como ler: tamanho do modelo',`<ul><li>Pontos <b>cheios</b> = usados para treinar. Pontos <b>vazados</b> = dados novos, que o modelo nunca viu.</li><li>Tracejado = curva real. Linha colorida = modelo. A cor indica o diagnóstico: azul (pequeno demais), verde (na medida), laranja (grande demais).</li><li>Compare os dois cartões: o erro de treino sempre cai, mas o erro em dados novos cai e depois <b>sobe</b>.</li></ul><b>Experimente:</b> arraste o controle até o fim e veja a curva "decorar" os pontos.`],
+ sizeErr:['Como ler: busca do tamanho',`<ul><li><b>Esquerda:</b> cada ponto é uma rede treinada. Horizontal = nº de neurônios (dobra a cada passo); vertical = erro.</li><li><b>Cinza</b> = erro no treino; <b style="color:var(--reg)">azul</b> = erro na validação (dados separados).</li><li>A faixa verde marca a rede escolhida: a menor que ficou perto (até 10%) do melhor erro de validação.</li><li><b>Direita:</b> a curva da rede que está sendo treinada no momento.</li></ul>`],
+ actChart:['Como ler: teste das ativações',`<ul><li>Mesma PINN da mola, mudando só a "peça" (função de ativação).</li><li>Tracejado = real; <b style="color:var(--warn)">vermelho</b> = ReLU; <b style="color:var(--reg)">azul</b> = tanh; <b style="color:var(--pinn)">verde</b> = seno.</li><li>Os cartões mostram o erro no intervalo inteiro (0–10 s).</li><li>Repare que a ReLU erra até onde há sensores: ela não tem "aceleração".</li></ul>`],
+ coolChart:['Como ler: o café',`<ul><li><b>Horizontal:</b> tempo em minutos. <b>Vertical:</b> temperatura em °C.</li><li><b style="color:var(--warn)">Linha vermelha tracejada</b> = temperatura da sala (20 °C). O café nunca pode ficar abaixo dela.</li><li>Faixa amarela = sem sensores. <b style="color:var(--mlp)">Laranja</b> = rede comum; <b style="color:var(--pinn)">verde</b> = PINN.</li><li>Os cartões de tempo mostram quanto cada rede demorou para treinar.</li></ul><b>Experimente:</b> λ = 0 (a PINN vira rede comum) e sensores só até 2 min.`],
+ duels:['Como ler: os 3 duelos',`<ul><li>Cada quadro é um problema diferente, disputado pelas três ferramentas.</li><li>As medalhas ordenam pelo <b>erro</b> (no café e no carrinho, medido só na região sem sensores; no sinal, no intervalo todo).</li><li>Abaixo do ranking: o vencedor e <b>por que</b> ele venceu.</li></ul><b>Ideia central:</b> a melhor ferramenta depende do problema — quantidade de dados e se existe uma lei física confiável.`],
+ carChart:['Como ler: o carrinho',`<ul><li><b>Gráfico:</b> posição (m) ao longo do tempo (s). Tracejado = real; <b style="color:var(--reg)">azul</b> = regressão; <b style="color:var(--pinn)">verde</b> = PINN.</li><li><b>Pista:</b> mostra onde cada carrinho está no instante t. Clique em "Ver os carrinhos andando".</li><li>Os cartões mostram erro no futuro, nº de parâmetros e tempo de cálculo.</li></ul><b>Experimente:</b> coloque a velocidade da PINN em 2,0 (a certa) e depois em 2,5.`],
+ sigChart:['Como ler: sinal sem lei',`<ul><li>Um sinal curvo, com 25 sensores espalhados e <b>nenhuma</b> lei física conhecida.</li><li><b style="color:var(--mlp)">Laranja</b> = rede comum; <b style="color:var(--reg)">azul</b> = regressão (reta); <b style="color:var(--pinn)">verde</b> = PINN obrigada a seguir uma física inventada ("o sinal é constante").</li><li>Os cartões mostram o erro no intervalo inteiro.</li></ul>`]
+};
+Object.keys(HELP).forEach(id=>{const el=document.getElementById(id);if(!el)return;const h=el.closest('.card').querySelector('h3');if(!h)return;
+  const b=document.createElement('button');b.className='help';b.textContent='?';b.title='Como ler este gráfico';b.setAttribute('aria-label','Como ler este gráfico');b.dataset.help=id;h.appendChild(b);});
+document.body.insertAdjacentHTML('beforeend','<div id="helpBox" role="dialog" aria-modal="true"><div class="panel"><button class="b close" id="helpClose">✕</button><h4 id="helpT"></h4><div id="helpC"></div></div></div>');
+document.addEventListener('click',e=>{const b=e.target.closest('.help');if(b){const [t,c]=HELP[b.dataset.help];$('#helpT').textContent='💡 '+t;$('#helpC').innerHTML=c;$('#helpBox').classList.add('on');return;}
+  if(e.target.id==='helpBox'||e.target.id==='helpClose')$('#helpBox').classList.remove('on');});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#helpBox').classList.remove('on');});
+
+/* ======================= início ======================= */
+const h=parseInt((location.hash||'').replace('#p',''));go(isNaN(h)?0:h);
+</script>
+</body>
+</html>
