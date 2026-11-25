@@ -95,6 +95,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .qnum{font-size:13px;font-weight:700;color:var(--accent)}
 .qcard h3{margin:4px 0 6px}
 .qcard p{margin:0;color:var(--ink2);font-size:15px}
+/* download por QR code (o QR fica sempre escuro sobre branco para a câmera ler, também no modo escuro) */
+.dl{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-top:16px}
+.dl .qr{width:210px;height:210px;flex:none;background:#fff;border-radius:12px;padding:6px;border:1px solid var(--line)}
+.dl .qr svg{display:block;width:100%;height:100%;shape-rendering:crispEdges}
+.dl .txt{flex:1;min-width:200px}
+.dl h3{margin:0 0 6px}
+.dl p{margin:0 0 12px;color:var(--ink2)}
+.dl a{display:inline-block;font-size:15px;border-radius:10px;padding:9px 16px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none}
+.dl a:hover{border-color:var(--ink2)}
 /* analogy */
 .students{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .student{border-radius:12px;padding:14px;border:1px solid var(--line)}
@@ -158,6 +167,8 @@ th{font-size:13px;color:var(--ink2);font-weight:600}
 .howto ol{margin:4px 0 0;padding-left:22px}
 @media (prefers-reduced-motion:reduce){.dg .flow,.dg .dash.anim{animation:none}}
 @media (max-width:520px){.viz::before{content:"↔ arraste para o lado para ver o desenho inteiro";display:block;font-size:12px;color:var(--ink2);text-align:center;margin-bottom:6px}}
+.tblwrap{overflow-x:auto}
+@media (max-width:620px){.tblwrap::before{content:"↔ arraste para o lado para ver a tabela inteira";display:block;font-size:12px;color:var(--ink2);text-align:center;margin-bottom:6px}}
 .rec{margin-top:12px;padding:14px;border-radius:12px;background:var(--soft);min-height:60px}
 /* decision tree */
 .tree .q{font-size:18px;font-weight:600;margin-bottom:10px}
@@ -199,6 +210,16 @@ details.math summary{cursor:pointer;font-weight:600;color:var(--ink2);font-size:
 details.math[open] summary{margin-bottom:8px}
 .eq{font-family:"Cambria Math","STIX Two Math","Times New Roman",serif;font-size:18px;text-align:center;padding:10px;margin:8px 0;background:var(--soft);border-radius:8px;overflow-x:auto;white-space:normal;line-height:1.8}
 .eq i{font-style:italic}
+/* equações em TeX (KaTeX), desenhadas quando o bloco de matemática é aberto */
+.eq.tex-ok{font-family:inherit;font-size:16px;line-height:1.2;padding:12px 10px}
+.eq.tex-ok .katex-display{margin:0}
+.katex .k-mlp{color:var(--mlp)}.katex .k-pinn{color:var(--pinn)}.katex .k-reg{color:var(--reg)}
+.tx.tex-ok .katex{font-size:1.05em}
+/* frase da capa */
+.motto{margin:26px auto 4px;max-width:760px;text-align:center;padding:0 8px}
+.motto .la{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:clamp(20px,2.6vw,27px);color:var(--ink);margin:0;line-height:1.35}
+.motto .tr{color:var(--ink2);margin:8px 0 6px}
+.motto .who{font-size:12px;color:var(--accent);font-weight:650;letter-spacing:.06em;text-transform:uppercase}
 details.math h5{margin:12px 0 2px;font-size:14px}
 details.math p{font-size:14px;color:var(--ink2);margin:4px 0}
 .funnel{display:flex;flex-direction:column;gap:8px;margin-top:12px}
@@ -251,6 +272,19 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
     <div class="card qcard" data-go="2"><div class="qnum">Questão 24</div><h3>Como escolher a arquitetura?</h3><p>Resposta curta: a <b>menor</b> rede que tem o <b>"jeito" certo</b> do problema.</p></div>
     <div class="card qcard" data-go="3"><div class="qnum">Questão 25</div><h3>Quais os limites das redes?</h3><p>Resposta curta: <b>fora dos dados, elas chutam</b>. A física ajuda — mas não faz milagre.</p></div>
     <div class="card qcard" data-go="4"><div class="qnum">Questão 26</div><h3>Quando NÃO usar rede neural?</h3><p>Resposta curta: quando <b>algo mais simples</b> resolve igual ou melhor.</p></div>
+  </div>
+  <blockquote class="motto">
+    <p class="la" lang="la">“Entia non sunt multiplicanda praeter necessitatem”</p>
+    <p class="tr">(Não se devem multiplicar entidades além do estritamente necessário)</p>
+    <span class="who">Navalha de Ockham</span>
+  </blockquote>
+  <div class="card dl">
+    <div class="qr"><svg viewBox="0 0 33 33" role="img" aria-label="QR code para abrir a apresentação no celular"><path fill="#fff" d="M0 0h33v33h-33z"/><path class="qrline" stroke="#111" d="M2 2.5h7m2 0h1m1 0h1m3 0h2m2 0h2m1 0h7m-29 1h1m5 0h1m2 0h1m2 0h1m4 0h2m1 0h1m1 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m2 0h2m4 0h1m4 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h3m2 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m1 0h1m1 0h6m1 0h2m3 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h2m3 0h1m1 0h1m3 0h2m-21 1h1m1 0h5m2 0h2m1 0h1m1 0h2m1 0h1m2 0h1m1 0h5m-27 1h1m4 0h1m1 0h2m3 0h1m2 0h1m2 0h3m1 0h3m3 0h1m-27 1h2m2 0h1m2 0h1m1 0h2m2 0h1m5 0h1m-22 1h2m3 0h1m1 0h3m1 0h2m1 0h1m4 0h2m1 0h2m1 0h1m1 0h1m-27 1h4m1 0h1m1 0h1m1 0h1m1 0h1m2 0h3m1 0h1m1 0h1m3 0h2m-25 1h1m1 0h2m1 0h1m1 0h6m2 0h3m1 0h4m3 0h1m-29 1h3m1 0h1m1 0h2m4 0h4m4 0h1m1 0h1m2 0h2m-26 1h1m1 0h1m5 0h1m3 0h1m1 0h1m2 0h2m3 0h1m3 0h1m-26 1h3m1 0h4m1 0h2m1 0h5m1 0h1m4 0h2m-27 1h1m2 0h1m4 0h2m1 0h1m4 0h5m1 0h3m1 0h1m1 0h1m-29 1h1m1 0h1m3 0h3m1 0h1m4 0h3m2 0h2m1 0h2m1 0h1m-27 1h1m3 0h1m2 0h1m3 0h1m2 0h1m3 0h1m2 0h2m4 0h1m-28 1h1m1 0h2m2 0h3m6 0h1m1 0h1m2 0h5m1 0h3m-21 1h2m1 0h4m3 0h1m1 0h1m3 0h5m-29 1h7m2 0h3m1 0h4m1 0h3m1 0h1m1 0h3m-27 1h1m5 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h2m3 0h1m2 0h2m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m2 0h1m2 0h5m1 0h2m-28 1h1m1 0h3m1 0h1m1 0h3m2 0h1m6 0h1m4 0h4m-29 1h1m1 0h3m1 0h1m1 0h2m2 0h4m2 0h10m-28 1h1m5 0h1m3 0h2m3 0h1m2 0h1m1 0h1m1 0h1m1 0h2m1 0h1m-28 1h7m1 0h2m4 0h4m1 0h1m1 0h2m1 0h3"/></svg></div>
+    <div class="txt">
+      <h3>📱 Acompanhe no seu celular</h3>
+      <p>Aponte a câmera do celular para o QR code e abra esta apresentação interativa no seu aparelho.</p>
+      <a href="https://pinns-rnnas.vercel.app/#p2" target="_blank" rel="noopener">Abrir o link ↗</a>
+    </div>
   </div>
   <div class="btns" style="margin-top:22px"><button class="b primary" data-go="1">Começar →</button></div>
   <p class="note">Integrantes: Guilherme Costanzi · Guilherme Braga · Rafael Cobo &nbsp;·&nbsp; Navegue com <span class="kbd">←</span> <span class="kbd">→</span></p>
@@ -346,30 +380,30 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
     <details class="math">
       <summary>📐 Ver a matemática por trás (opcional)</summary>
       <h5>0. A forma geral de uma PINN</h5>
-      <p>Qualquer lei física pode ser escrita como "uma conta com a função e suas derivadas que deve dar zero". Chamando essa conta de 𝒩 e as regras de início/borda de ℬ:</p>
-      <div class="eq">𝒩[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;no domínio, &nbsp;&nbsp;&nbsp; ℬ[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;nas condições iniciais e de contorno</div>
-      <p>A PINN troca a solução desconhecida <i>u</i> por uma rede neural <i>u</i><sub>θ</sub> e treina minimizando:</p>
-      <div class="eq">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i><sub>d</sub>) Σ |<i>u</i><sub>θ</sub>(<i>x<sub>i</sub></i>, <i>t<sub>i</sub></i>) − <i>u<sub>i</sub></i>|²</span> + <span style="color:var(--reg)">λ<sub>r</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>r</sub>) Σ |𝒩[<i>u</i><sub>θ</sub>](<i>x<sub>j</sub></i>, <i>t<sub>j</sub></i>)|²</span> + <span style="color:var(--reg)">λ<sub>b</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>b</sub>) Σ |ℬ[<i>u</i><sub>θ</sub>](<i>x<sub>k</sub></i>, <i>t<sub>k</sub></i>)|²</span></div>
-      <p><span style="color:var(--mlp)">dados</span> + <span style="color:var(--pinn)">equação nos pontos de colocação</span> + <span style="color:var(--pinn)">condições iniciais/de contorno</span>, com pesos <span style="color:var(--reg)">λ</span>. As derivadas dentro de 𝒩 vêm da diferenciação automática. Essa é a formulação de Raissi, Perdikaris e Karniadakis (2019). Nos nossos exemplos só há tempo (sem <i>x</i>), então <i>u</i><sub>θ</sub> = x̂(<i>t</i>) e usamos um único λ para a física e as condições iniciais — veja os itens abaixo.</p>
+      <p>Qualquer lei física pode ser escrita como "uma conta com a função e suas derivadas que deve dar zero". Chamando essa conta de <span class="tx" data-tex="\mathcal{N}">𝒩</span> e as regras de início/borda de <span class="tx" data-tex="\mathcal{B}">ℬ</span>:</p>
+      <div class="eq" data-tex="\mathcal{N}[u](x,t) = 0 \;\;\text{no domínio}, \qquad \mathcal{B}[u](x,t) = 0 \;\;\text{nas condições iniciais e de contorno}">𝒩[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;no domínio, &nbsp;&nbsp;&nbsp; ℬ[<i>u</i>](<i>x</i>, <i>t</i>) = 0 &nbsp;nas condições iniciais e de contorno</div>
+      <p>A PINN troca a solução desconhecida <span class="tx" data-tex="u"><i>u</i></span> por uma rede neural <span class="tx" data-tex="u_\theta"><i>u</i><sub>θ</sub></span> e treina minimizando:</p>
+      <div class="eq" data-tex="L(\theta) = \htmlClass{k-mlp}{\frac{1}{N_d}\sum_{i=1}^{N_d}\big|u_\theta(x_i,t_i)-u_i\big|^2} + \htmlClass{k-reg}{\lambda_r}\,\htmlClass{k-pinn}{\frac{1}{N_r}\sum_{j=1}^{N_r}\big|\mathcal{N}[u_\theta](x_j,t_j)\big|^2} + \htmlClass{k-reg}{\lambda_b}\,\htmlClass{k-pinn}{\frac{1}{N_b}\sum_{k=1}^{N_b}\big|\mathcal{B}[u_\theta](x_k,t_k)\big|^2}">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i><sub>d</sub>) Σ |<i>u</i><sub>θ</sub>(<i>x<sub>i</sub></i>, <i>t<sub>i</sub></i>) − <i>u<sub>i</sub></i>|²</span> + <span style="color:var(--reg)">λ<sub>r</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>r</sub>) Σ |𝒩[<i>u</i><sub>θ</sub>](<i>x<sub>j</sub></i>, <i>t<sub>j</sub></i>)|²</span> + <span style="color:var(--reg)">λ<sub>b</sub></span> <span style="color:var(--pinn)">(1/<i>N</i><sub>b</sub>) Σ |ℬ[<i>u</i><sub>θ</sub>](<i>x<sub>k</sub></i>, <i>t<sub>k</sub></i>)|²</span></div>
+      <p><span style="color:var(--mlp)">dados</span> + <span style="color:var(--pinn)">equação nos pontos de colocação</span> + <span style="color:var(--pinn)">condições iniciais/de contorno</span>, com pesos <span style="color:var(--reg)"><span class="tx" data-tex="\lambda">λ</span></span>. As derivadas dentro de <span class="tx" data-tex="\mathcal{N}">𝒩</span> vêm da diferenciação automática. Essa é a formulação de Raissi, Perdikaris e Karniadakis (2019). Nos nossos exemplos só há tempo (sem <span class="tx" data-tex="x"><i>x</i></span>), então <span class="tx" data-tex="u_\theta = \hat{x}(t)"><i>u</i><sub>θ</sub> = x̂(<i>t</i>)</span> e usamos um único <span class="tx" data-tex="\lambda">λ</span> para a física e as condições iniciais — veja os itens abaixo.</p>
       <h5>1. A rede neural</h5>
-      <p>Uma camada oculta com <i>H</i> neurônios. Recebe o tempo <i>t</i> e devolve a previsão x̂(<i>t</i>):</p>
-      <div class="eq">x̂(<i>t</i>) = <i>d</i> + Σ<sub><i>k</i>=1…<i>H</i></sub> <i>a<sub>k</sub></i> · σ(<i>w<sub>k</sub></i> <i>t</i> + <i>b<sub>k</sub></i>)</div>
-      <p>σ é a função de ativação (tanh, ReLU ou seno). Os parâmetros θ = {<i>a<sub>k</sub></i>, <i>w<sub>k</sub></i>, <i>b<sub>k</sub></i>, <i>d</i>} são ajustados no treino (3<i>H</i> + 1 números).</p>
+      <p>Uma camada oculta com <span class="tx" data-tex="H"><i>H</i></span> neurônios. Recebe o tempo <span class="tx" data-tex="t"><i>t</i></span> e devolve a previsão <span class="tx" data-tex="\hat{x}(t)">x̂(<i>t</i>)</span>:</p>
+      <div class="eq" data-tex="\hat{x}(t) = d + \sum_{k=1}^{H} a_k\,\sigma(w_k\,t + b_k)">x̂(<i>t</i>) = <i>d</i> + Σ<sub><i>k</i>=1…<i>H</i></sub> <i>a<sub>k</sub></i> · σ(<i>w<sub>k</sub></i> <i>t</i> + <i>b<sub>k</sub></i>)</div>
+      <p><span class="tx" data-tex="\sigma">σ</span> é a função de ativação (tanh, ReLU ou seno). Os parâmetros <span class="tx" data-tex="\theta = \{a_k,\, w_k,\, b_k,\, d\}">θ = {<i>a<sub>k</sub></i>, <i>w<sub>k</sub></i>, <i>b<sub>k</sub></i>, <i>d</i>}</span> são ajustados no treino (<span class="tx" data-tex="3H+1">3<i>H</i> + 1</span> números).</p>
       <h5>2. A <i>loss</i> nos nossos exemplos</h5>
-      <div class="eq">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i>) Σ<sub><i>i</i></sub> [x̂(<i>t<sub>i</sub></i>) − <i>x<sub>i</sub></i>]²</span> + <span style="color:var(--reg)">λ</span> · <span style="color:var(--pinn)">{ (1/<i>M</i>) Σ<sub><i>j</i></sub> <i>r</i>(τ<sub><i>j</i></sub>)² + [x̂(0) − <i>x</i><sub>0</sub>]² + [x̂′(0) − <i>v</i><sub>0</sub>]² }</span></div>
-      <p><span style="color:var(--mlp)">Laranja</span>: erro nos <i>N</i> sensores. <span style="color:var(--pinn)">Verde</span>: erro na equação nos <i>M</i> pontos de colocação τ<sub><i>j</i></sub> + condições iniciais. A rede comum usa só a parte laranja (λ = 0).</p>
-      <h5>3. O resíduo <i>r</i> de cada problema (a lei física "igualada a zero")</h5>
-      <div class="eq">Mola: <i>r</i> = x̂″ + 2ζω x̂′ + ω² x̂ &nbsp;&nbsp;(ζ = 0,1; ω = 1,5)</div>
-      <div class="eq">Café: <i>r</i> = T̂′ + <i>k</i> (T̂ − <i>T</i><sub>amb</sub>) &nbsp;&nbsp;(<i>k</i> = 0,35; <i>T</i><sub>amb</sub> = 20 °C)</div>
-      <div class="eq">Carrinho: <i>r</i> = x̂′ − <i>v</i></div>
+      <div class="eq" data-tex="L(\theta) = \htmlClass{k-mlp}{\frac{1}{N}\sum_{i=1}^{N}\big[\hat{x}(t_i)-x_i\big]^2} + \htmlClass{k-reg}{\lambda}\cdot\htmlClass{k-pinn}{\Big\{\frac{1}{M}\sum_{j=1}^{M} r(\tau_j)^2 + \big[\hat{x}(0)-x_0\big]^2 + \big[\hat{x}'(0)-v_0\big]^2\Big\}}">L(θ) = <span style="color:var(--mlp)">(1/<i>N</i>) Σ<sub><i>i</i></sub> [x̂(<i>t<sub>i</sub></i>) − <i>x<sub>i</sub></i>]²</span> + <span style="color:var(--reg)">λ</span> · <span style="color:var(--pinn)">{ (1/<i>M</i>) Σ<sub><i>j</i></sub> <i>r</i>(τ<sub><i>j</i></sub>)² + [x̂(0) − <i>x</i><sub>0</sub>]² + [x̂′(0) − <i>v</i><sub>0</sub>]² }</span></div>
+      <p><span style="color:var(--mlp)">Laranja</span>: erro nos <span class="tx" data-tex="N"><i>N</i></span> sensores. <span style="color:var(--pinn)">Verde</span>: erro na equação nos <span class="tx" data-tex="M"><i>M</i></span> pontos de colocação <span class="tx" data-tex="\tau_j">τ<sub><i>j</i></sub></span> + condições iniciais. A rede comum usa só a parte laranja (<span class="tx" data-tex="\lambda = 0">λ = 0</span>).</p>
+      <h5>3. O resíduo <span class="tx" data-tex="r"><i>r</i></span> de cada problema (a lei física "igualada a zero")</h5>
+      <div class="eq" data-tex="\text{Mola:}\quad r = \hat{x}'' + 2\zeta\omega\,\hat{x}' + \omega^2\,\hat{x} \qquad (\zeta = 0{,}1;\ \omega = 1{,}5)">Mola: <i>r</i> = x̂″ + 2ζω x̂′ + ω² x̂ &nbsp;&nbsp;(ζ = 0,1; ω = 1,5)</div>
+      <div class="eq" data-tex="\text{Café:}\quad r = \hat{T}' + k\,(\hat{T} - T_{\text{amb}}) \qquad (k = 0{,}35;\ T_{\text{amb}} = 20\,{}^{\circ}\text{C})">Café: <i>r</i> = T̂′ + <i>k</i> (T̂ − <i>T</i><sub>amb</sub>) &nbsp;&nbsp;(<i>k</i> = 0,35; <i>T</i><sub>amb</sub> = 20 °C)</div>
+      <div class="eq" data-tex="\text{Carrinho:}\quad r = \hat{x}' - v">Carrinho: <i>r</i> = x̂′ − <i>v</i></div>
       <h5>4. As derivadas da rede (diferenciação automática)</h5>
-      <div class="eq">x̂′(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i> σ′(·) &nbsp;&nbsp;&nbsp; x̂″(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i>² σ″(·)</div>
-      <p>Com tanh: σ′ = 1 − tanh², σ″ = −2 tanh (1 − tanh²). Com ReLU: σ″ = 0 em todo lugar — por isso ela não serve para a mola.</p>
+      <div class="eq" data-tex="\hat{x}'(t) = \sum_{k=1}^{H} a_k\,w_k\,\sigma'(w_k t + b_k) \qquad \hat{x}''(t) = \sum_{k=1}^{H} a_k\,w_k^{2}\,\sigma''(w_k t + b_k)">x̂′(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i> σ′(·) &nbsp;&nbsp;&nbsp; x̂″(<i>t</i>) = Σ <i>a<sub>k</sub></i> <i>w<sub>k</sub></i>² σ″(·)</div>
+      <p>Com tanh: <span class="tx" data-tex="\sigma' = 1 - \tanh^2,\quad \sigma'' = -2\tanh\,(1 - \tanh^2)">σ′ = 1 − tanh², σ″ = −2 tanh (1 − tanh²)</span>. Com ReLU: <span class="tx" data-tex="\sigma'' = 0">σ″ = 0</span> em todo lugar — por isso ela não serve para a mola.</p>
       <h5>5. Treino</h5>
-      <div class="eq">θ ← θ − η · Adam(∇<sub>θ</sub> L) &nbsp;&nbsp;(η = <i>learning rate</i>, 0,01 a 0,02)</div>
+      <div class="eq" data-tex="\theta \leftarrow \theta - \eta\cdot\operatorname{Adam}\!\big(\nabla_{\theta} L\big) \qquad (\eta = \textit{learning rate},\ 0{,}01 \text{ a } 0{,}02)">θ ← θ − η · Adam(∇<sub>θ</sub> L) &nbsp;&nbsp;(η = <i>learning rate</i>, 0,01 a 0,02)</div>
       <p>A cada passo, calculamos como cada parâmetro afeta o erro (o gradiente) e damos um pequeno passo para diminuí-lo.</p>
       <h5>6. Como medimos o erro nos cartões</h5>
-      <div class="eq">RMSE = √{ (1/<i>n</i>) Σ [x̂(<i>t</i>) − <i>x</i><sub>real</sub>(<i>t</i>)]² }</div>
+      <div class="eq" data-tex="\text{RMSE} = \sqrt{\frac{1}{n}\sum \big[\hat{x}(t) - x_{\text{real}}(t)\big]^2}">RMSE = √{ (1/<i>n</i>) Σ [x̂(<i>t</i>) − <i>x</i><sub>real</sub>(<i>t</i>)]² }</div>
       <p>"Quanto, em média, a previsão ficou longe da realidade", calculado só no trecho indicado (por exemplo, 6–10 s).</p>
     </details>
   </div>
@@ -477,6 +511,19 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
       <div class="rec"><b style="color:var(--mlp)">↕️ Rede larga</b> = muitos neurônios <b>lado a lado</b>, numa camada só.<br>Cada neurônio desenha uma pecinha e a rede <b>soma</b> tudo no final. Foi o que testamos no ②b.</div>
       <div class="rec"><b style="color:var(--pinn)">↔️ Rede funda</b> = poucos neurônios por camada, mas <b>muitas camadas</b>.<br>Cada camada trabalha <b>em cima</b> do resultado da anterior, como peças montadas com outras peças.</div>
     </div>
+
+    <h3 style="margin-top:24px">📊 Qual o benefício de cada uma?</h3>
+    <div class="tblwrap">
+    <table style="min-width:560px">
+      <tr><th style="width:18%"></th><th style="width:41%;color:var(--mlp)">↕️ Mais larga</th><th style="width:41%;color:var(--pinn)">↔️ Mais funda</th></tr>
+      <tr><td><b>O que ganha</b></td><td>Mais <b>detalhe em cada etapa</b>: mais pecinhas lado a lado.</td><td>Mais <b>etapas</b>: cada camada combina o que a anterior fez.</td></tr>
+      <tr><td><b>Como a capacidade cresce</b></td><td><b>Soma</b>: cada neurônio a mais = 1 pecinha.</td><td><b>Multiplica</b>: cada camada dobra o que dá para desenhar (o papel dobrado abaixo).</td></tr>
+      <tr><td><b>Treino</b></td><td>✅ Fácil e rápido: os neurônios trabalham em paralelo.</td><td>⚠️ Mais difícil e lento: o erro atravessa muitas camadas (<i>vanishing gradient</i>).</td></tr>
+      <tr><td><b>Melhor para</b></td><td>Curvas simples e lisas, com poucas entradas.</td><td>Dados com <b>níveis</b> de estrutura: imagens, texto, física em espaço + tempo.</td></tr>
+      <tr><td><b>Exemplos comuns</b></td><td>• Nossas PINNs da <b>mola</b> e do <b>café</b>: 1 camada de 8 a 32 neurônios.<br>• Previsão com <b>tabelas</b> (preço de casa, risco de crédito): redes de 2 ou 3 camadas.<br>• Curva de <b>calibração</b> de um sensor.</td><td>• Reconhecer <b>rostos e objetos</b> em fotos: CNNs como a ResNet, com 50 a 152 camadas.<br>• <b>ChatGPT</b> e tradutores: Transformers com dezenas de camadas (o GPT-3 tem 96).<br>• PINNs de <b>escoamento de fluidos</b> (Navier-Stokes): 9 camadas.</td></tr>
+    </table>
+    </div>
+    <div class="answer" style="margin-top:14px"><span class="lbl">Em uma frase</span><b>Largura</b> é <i>quantos detalhes por etapa</i>; <b>profundidade</b> é <i>quantas etapas de raciocínio</i>. A largura resolve problemas simples com facilidade; a profundidade resolve problemas complexos com eficiência.</div>
 
     <h3 style="margin-top:24px">📄 Por que empilhar camadas ajuda? Dobre um papel</h3>
     <p>Pegue uma folha e dobre ao meio: ela fica com <b>2</b> partes. Dobre de novo: <b>4</b>. De novo: <b>8</b>. Cada dobra <b>dobra</b> o número de partes. No teste abaixo, cada camada tem só <b>2 neurônios</b> e faz exatamente isso com a curva. Arraste e conte os "pedaços de reta".</p>
@@ -704,9 +751,9 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
   <span class="kicker">Parte 5 · Resumo</span>
   <h2>As três respostas, juntas</h2>
   <div class="grid g3">
-    <div class="card" style="margin:0"><div class="qnum">Q24 · Arquitetura</div><p>É ditada pela natureza do problema, dos dados (tipo, quantidade), a regra de negócio (exige alta precisão? interpretabilidade?)</p></div>
-    <div class="card" style="margin:0"><div class="qnum">Q25 · Limites</div><p>Redes <b>tendem a chutar errado fora do intervalo dos dados</b>, precisam de muitos dados, custam caro e são caixa-preta. A PINN reduz o 1º e o 2º, mas depende da equação certa.</p></div>
-    <div class="card" style="margin:0"><div class="qnum">Q26 · Quando não usar</div><p>Quando <b>reta, fórmula ou solver</b> resolvem igual ou melhor — ou quando a física disponível está <b>errada</b>.</p></div>
+    <div class="card" style="margin:0"><div class="qnum">Q24 · Arquitetura</div><p>Depende do <b>problema</b>: o tipo de dado escolhe a família (imagem → CNN, texto → Transformer, física → PINN) e o que se exige (precisão? explicar as decisões?) pesa na escolha. O tamanho se acha <b>testando na validação</b>: fique com a <b>menor</b> rede que funciona (Ockham).</p></div>
+    <div class="card" style="margin:0"><div class="qnum">Q25 · Limites</div><p>Fora dos dados, a rede <b>chuta</b>. Ela também precisa de <b>muitos dados</b>, é cara para treinar, sensível a ajustes (λ, tamanho) e é uma <b>caixa-preta</b>. A PINN ajuda nos dois primeiros, mas só se a <b>equação estiver certa</b>.</p></div>
+    <div class="card" style="margin:0"><div class="qnum">Q26 · Quando não usar</div><p>Quando algo <b>mais simples</b> resolve igual ou melhor: uma <b>fórmula</b>, uma <b>reta</b> (regressão) ou um <b>solver</b> numérico. Também quando é preciso <b>explicar</b> cada decisão, quando há poucos dados e nenhuma lei física, ou quando a física disponível está <b>errada</b>.</p></div>
   </div>
 
   <div class="card tree" id="tree">
@@ -1345,6 +1392,16 @@ document.addEventListener('click',e=>{const b=e.target.closest('.help');if(b){co
 document.addEventListener('keydown',e=>{if(e.key==='Escape')$('#helpBox').classList.remove('on');});
 
 /* ======================= início ======================= */
+// ---- equações em TeX: KaTeX é carregado na 1ª vez que um bloco de matemática abre; se falhar, fica o texto em HTML ----
+let katexP=null;
+function loadKatex(){if(window.katex)return Promise.resolve();if(katexP)return katexP;
+  const V='https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/';
+  katexP=new Promise((ok,fail)=>{const l=document.createElement('link');l.rel='stylesheet';l.href=V+'katex.min.css';document.head.appendChild(l);
+    const sc=document.createElement('script');sc.src=V+'katex.min.js';sc.onload=ok;sc.onerror=()=>{katexP=null;fail();};document.head.appendChild(sc);});
+  return katexP;}
+function texRender(root){root.querySelectorAll('[data-tex]:not(.tex-ok)').forEach(el=>{
+  try{katex.render(el.dataset.tex,el,{displayMode:el.classList.contains('eq'),throwOnError:true,strict:false,trust:c=>c.command==='\\htmlClass'});el.classList.add('tex-ok');}catch(e){console.warn('TeX:',e.message);}});}
+$$('details.math').forEach(d=>d.addEventListener('toggle',()=>{if(d.open&&d.querySelector('[data-tex]:not(.tex-ok)'))loadKatex().then(()=>texRender(d)).catch(()=>{});}));
 const h=parseInt((location.hash||'').replace('#p',''));go(isNaN(h)?0:h);
 </script>
 </body>
