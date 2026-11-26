@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PINNs na Prática</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#f6f5f1; --card:#ffffff; --ink:#1d1d1b; --ink2:#5b5b57; --line:#e3e1da; --soft:#efede6;
@@ -174,14 +176,112 @@ th{font-size:13px;color:var(--ink2);font-weight:600}
 .tree .q{font-size:18px;font-weight:600;margin-bottom:10px}
 .tree .path{font-size:13px;color:var(--ink2);margin-bottom:10px;min-height:20px}
 .result{padding:16px;border-radius:12px;background:var(--accentSoft);border-left:5px solid var(--accent)}
-/* quiz */
-.quiz .item{border-top:1px solid var(--line);padding:14px 0}
-.quiz .item:first-child{border-top:0}
-.opts{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.opts button{font:inherit;font-size:15px;text-align:left;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:9px 12px;cursor:pointer}
-.opts button.ok{border-color:var(--pinn);background:var(--accentSoft)}
-.opts button.no{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--card))}
-.fb{font-size:14px;color:var(--ink2);margin-top:6px}
+/* ===== chefão 8-bit: derrote o Gênio do Mal ===== */
+.arcade{position:relative;overflow:hidden;color:#f3eaff;border:4px solid #000;border-radius:12px;padding:14px 16px 16px;user-select:none;-webkit-user-select:none;
+  font-family:"VT323",ui-monospace,Consolas,monospace;
+  background:radial-gradient(#fff 1px,transparent 1.6px) 0 0/46px 46px,radial-gradient(#c7a6ff 1px,transparent 1.6px) 23px 23px/70px 70px,linear-gradient(#2c1656,#120a22 70%)}
+.arcade::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:8;background:repeating-linear-gradient(0deg,rgba(0,0,0,.2) 0 1px,transparent 1px 3px)}
+.arcade .px{font-family:"Press Start 2P",ui-monospace,Consolas,monospace;font-size:10px;letter-spacing:.04em;line-height:1.5}
+.hud{position:relative;z-index:3;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.hud .mid{color:#ffd54a;text-align:center;align-self:center}
+.hudbtns{display:flex;gap:8px}
+.hp{display:flex;gap:3px;margin-top:6px}
+.hp i{width:22px;height:14px;background:#e8344e;border:2px solid #000;box-shadow:inset 0 3px 0 #ff97a6,inset 0 -3px 0 #9e1730}
+.hp i.lost{background:#2b1b3d;box-shadow:none;animation:pxblink .45s steps(2) 3}
+.hearts{display:flex;gap:5px;margin-top:6px;justify-content:flex-end}
+.hearts svg{width:28px;height:auto;display:block}
+.hearts svg.lost{filter:grayscale(1) brightness(.45);animation:pxblink .45s steps(2) 3}
+.fsx{font:inherit;font-family:system-ui,"Segoe UI Symbol","Segoe UI",sans-serif;font-size:16px;line-height:1;color:#fff;background:#3a2a5c;border:3px solid #000;box-shadow:3px 3px 0 #000;padding:6px 8px;cursor:pointer}
+.arena{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;min-height:290px;padding-top:6px}
+.say{position:relative;z-index:4;max-width:min(460px,92%);background:#fff;color:#1a0f2e;border:3px solid #000;box-shadow:4px 4px 0 #000;padding:9px 12px;font-family:"Press Start 2P",monospace;font-size:10px;line-height:1.7;text-align:center}
+.say::after{content:"";position:absolute;left:50%;bottom:-12px;margin-left:-6px;width:12px;height:12px;background:#fff;border:3px solid #000;border-top:0;border-left:0;transform:rotate(45deg) scaleY(.7)}
+.sprite{position:relative;width:118px;animation:pxbob .7s steps(2) infinite}
+.sprite svg{display:block;width:100%;height:auto}
+.sprite svg+svg{position:absolute;left:0;top:0}
+.sprite .fA{animation:frOn .7s steps(1) infinite}.sprite .fB{animation:frOff .7s steps(1) infinite}
+.sprite .fC,.sprite .fD{opacity:0}
+.sprite.laugh .fA,.sprite.laugh .fB{animation:none;opacity:0}
+.sprite.laugh .fC{animation:frOn .26s steps(1) infinite}.sprite.laugh .fD{animation:frOff .26s steps(1) infinite}
+.sprite.laugh{animation-duration:.26s}
+.sprite.hit{animation:pxhit .5s steps(4)}.sprite.hit svg{filter:brightness(2.6) saturate(.2)}
+.sprite.ko{animation:pxko 1s steps(8) forwards}
+.sprite.gone{visibility:hidden}
+.sprite.boss{scale:1.3;transform-origin:50% 100%}
+.squad{display:flex;align-items:flex-end;justify-content:center;gap:34px}
+.bwrap{display:flex;flex-direction:column;align-items:center}
+.pips{display:flex;gap:4px;margin-bottom:10px;min-height:12px}.squad:not(.trio) .pips{display:none}
+.pips i{width:18px;height:10px;background:#e8344e;border:2px solid #000;box-shadow:inset 0 2px 0 #ff97a6}.pips i.lost{background:#2b1b3d;box-shadow:none;animation:pxblink .45s steps(2) 3}
+.bwrap.down .pips{visibility:hidden}
+.sprite,.sprite svg{animation-delay:var(--d,0s)}.sprite.hit,.sprite.ko{animation-delay:0s}
+.squad.trio .bwrap:nth-child(2) .sprite{animation-direction:reverse}
+.squad.trio .sprite{width:195px}.squad.trio .floor{width:215px}.squad.trio{gap:40px}
+.floor{width:150px;height:12px;margin-top:-6px;background:radial-gradient(closest-side,rgba(0,0,0,.55),transparent);}
+@media (min-width:700px){.sprite{width:168px}.floor{width:200px}.arena{min-height:440px}}
+.dialog{position:relative;z-index:3;margin-top:14px;background:#0b0614;border:3px solid #fff;box-shadow:0 0 0 3px #000,6px 6px 0 3px #000;padding:12px 14px}
+.dialog .q{font-size:26px;line-height:1.15;min-height:2.3em}
+.ans{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:12px;margin-top:10px}
+.pxbtn{font-family:"Press Start 2P",ui-monospace,monospace;font-size:11px;line-height:1.5;color:#fff;text-align:left;background:#3a2a5c;border:3px solid #000;cursor:pointer;padding:10px 12px;
+  box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.22),4px 4px 0 #000}
+.pxbtn:hover:not(:disabled){filter:brightness(1.15)}
+.pxbtn:active:not(:disabled){transform:translate(3px,3px);box-shadow:inset -4px -4px 0 rgba(0,0,0,.3),inset 4px 4px 0 rgba(255,255,255,.22),1px 1px 0 #000}
+.pxbtn .k{display:inline-block;background:#000;color:#ffd54a;padding:2px 5px;margin-right:6px}
+.pxbtn small{display:block;font-family:"VT323",ui-monospace,monospace;font-size:19px;line-height:1.1;color:#efe6ff;margin-top:5px;letter-spacing:0}
+.pxbtn.c-rede{background:#2f5bd8}.pxbtn.c-pinn{background:#12875f}.pxbtn.c-simples{background:#b9601b}
+.pxbtn:disabled{cursor:default;opacity:.4}
+.ans.intro .pxbtn:disabled{opacity:1}
+
+.pxbtn.ok{opacity:1;outline:4px solid #7dffb0;outline-offset:2px}.pxbtn.no{opacity:1;outline:4px solid #ff5a6e;outline-offset:2px}
+.pxbtn.go{background:#ffd54a;color:#1a0f2e;margin-top:12px}
+.dialog .exp{font-size:22px;line-height:1.15;color:#e6dcff;margin-top:10px;min-height:1.15em}
+.banner{display:none;position:absolute;left:50%;top:42%;z-index:6;transform:translate(-50%,-50%);font-family:"Press Start 2P",monospace;font-size:clamp(22px,5vw,48px);color:#ffd54a;white-space:nowrap;
+  text-shadow:4px 4px 0 #000,-3px -3px 0 #d62839;animation:pxblink .7s steps(2) infinite}
+.arcade.won .banner,.arcade.lost .banner{display:block}
+.arcade.lost .banner{color:#ff5a6e;text-shadow:4px 4px 0 #000,-3px -3px 0 #4a0d1a}
+.arcade.lost::before{content:"";position:absolute;inset:0;z-index:1;background:rgba(200,20,50,.22);pointer-events:none}
+.arcade.shake{animation:pxshake .35s steps(4)}
+.flash{position:absolute;inset:0;z-index:7;pointer-events:none;opacity:0;background:#ff2a4a}
+.flash.on{animation:pxflash .35s steps(3)}
+.fx{position:absolute;inset:0;z-index:7;pointer-events:none}
+.fx>*{position:absolute;left:0;top:0}
+.fx .dmg{font-family:"Press Start 2P",monospace;font-size:18px;color:#ff5a6e;text-shadow:3px 3px 0 #000}
+@keyframes frOn{0%{opacity:1}50%{opacity:0}100%{opacity:0}}
+@keyframes frOff{0%{opacity:0}50%{opacity:1}100%{opacity:1}}
+@keyframes pxbob{0%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}100%{transform:translateY(0) rotate(-3deg)}}
+@keyframes pxhit{0%{transform:translateX(0)}25%{transform:translateX(-12px)}50%{transform:translateX(12px)}75%{transform:translateX(-6px)}100%{transform:none}}
+@keyframes pxko{0%{opacity:1;transform:none}25%{opacity:0}40%{opacity:1;transform:translateY(4px) rotate(-8deg)}55%{opacity:0}70%{opacity:1;transform:translateY(10px) rotate(8deg)}100%{opacity:0;transform:translateY(24px) scale(.7)}}
+@keyframes pxblink{50%{opacity:.15}}
+@keyframes pxshake{25%{transform:translate(-8px,4px)}50%{transform:translate(8px,-4px)}75%{transform:translate(-4px,2px)}}
+@keyframes pxflash{0%{opacity:.5}100%{opacity:0}}
+/* tela cheia (API de fullscreen ou, sem ela, uma camada fixa) */
+.arcade:fullscreen,.arcade.fs-fallback{border:0;border-radius:0;display:flex;flex-direction:column;padding:2.5vh 3vw;overflow:auto}
+.arcade:-webkit-full-screen{border:0;border-radius:0;display:flex;flex-direction:column;padding:2.5vh 3vw;overflow:auto}
+.arcade.fs-fallback{position:fixed;inset:0;z-index:1000}
+.arcade:fullscreen .arena,.arcade.fs-fallback .arena{flex:1}
+.arcade:fullscreen .sprite,.arcade.fs-fallback .sprite{width:clamp(120px,27vh,300px)}
+.arcade:fullscreen .squad.trio .sprite,.arcade.fs-fallback .squad.trio .sprite{width:calc(var(--gh) * .625)}
+.arcade:fullscreen,.arcade.fs-fallback{--gh:45vh}
+.arcade:fullscreen .squad.trio .floor,.arcade.fs-fallback .squad.trio .floor{width:calc(var(--gh) * .72)}
+.arcade:fullscreen .squad.trio,.arcade.fs-fallback .squad.trio{gap:5vw}
+.arcade:fullscreen .pips i,.arcade.fs-fallback .pips i{width:clamp(18px,2.6vh,32px);height:clamp(10px,1.5vh,18px)}
+.arcade:fullscreen .arena,.arcade.fs-fallback .arena{gap:1.2vh;padding-top:0;min-height:0}
+.arcade:fullscreen .dialog,.arcade.fs-fallback .dialog{margin-top:1.5vh;display:grid;grid-template-columns:1fr auto;column-gap:16px;align-items:end}
+.arcade:fullscreen .dialog .q,.arcade:fullscreen .dialog .ans,.arcade.fs-fallback .dialog .q,.arcade.fs-fallback .dialog .ans{grid-column:1/-1}
+.arcade:fullscreen .dialog .q,.arcade.fs-fallback .dialog .q{min-height:0}
+.arcade:fullscreen #gNext,.arcade.fs-fallback #gNext{grid-column:2;margin-top:10px;white-space:nowrap}
+@media (max-height:820px){.arcade:fullscreen,.arcade.fs-fallback{--gh:38vh}
+  .arcade:fullscreen .dialog .q,.arcade.fs-fallback .dialog .q{font-size:clamp(22px,3.6vh,30px)}
+  .arcade:fullscreen .dialog .exp,.arcade.fs-fallback .dialog .exp{font-size:clamp(19px,2.7vh,24px)}
+  .arcade:fullscreen .pxbtn,.arcade.fs-fallback .pxbtn{padding:8px 10px}}
+.arcade:fullscreen .px,.arcade.fs-fallback .px{font-size:clamp(10px,1.5vh,15px)}
+.arcade:fullscreen .say,.arcade.fs-fallback .say{font-size:clamp(10px,1.6vh,16px)}
+.arcade:fullscreen .dialog .q,.arcade.fs-fallback .dialog .q{font-size:clamp(26px,4.2vh,46px)}
+.arcade:fullscreen .pxbtn,.arcade.fs-fallback .pxbtn{font-size:clamp(11px,1.6vh,16px)}
+.arcade:fullscreen .pxbtn small,.arcade.fs-fallback .pxbtn small{font-size:clamp(19px,2.6vh,28px)}
+.arcade:fullscreen .dialog .exp,.arcade.fs-fallback .dialog .exp{font-size:clamp(22px,3vh,32px)}
+.arcade:fullscreen .hp i,.arcade.fs-fallback .hp i{width:clamp(22px,3.2vh,38px);height:clamp(14px,2vh,22px)}
+.arcade:fullscreen .hearts svg,.arcade.fs-fallback .hearts svg{width:clamp(28px,4vh,46px)}
+@media (max-width:560px){.arcade{padding:10px}.sprite{width:96px}.arena{min-height:250px}.dialog .q{font-size:23px}}
+@media (prefers-reduced-motion:reduce){.arcade *,.arcade{animation:none!important}.sprite .fB,.sprite .fD{opacity:0}.sprite.laugh .fC{opacity:1}}
 .check li{margin:6px 0}
 ul{padding-left:20px}
 .limits .card{margin:0}
@@ -252,7 +352,7 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
     <button class="tab" data-go="2">2 · Q24 Arquitetura</button>
     <button class="tab" data-go="3">3 · Q25 Limites</button>
     <button class="tab" data-go="4">4 · Q26 Quando não usar</button>
-    <button class="tab" data-go="5">5 · Resumo e quiz</button>
+    <button class="tab" data-go="5">5 · Resumo e desafio</button>
     <button class="theme" id="themeBtn" title="Trocar tema">◐</button>
   </div>
   <div class="progress" id="progress"></div>
@@ -773,9 +873,30 @@ footer{color:var(--ink2);font-size:13px;padding:20px 0 40px;text-align:center}
     </table>
   </div>
 
-  <div class="card quiz">
-    <div class="sim-head"><h3>🎯 Teste rápido</h3><span class="pill">Acertos: <b id="score">0</b>/6</span></div>
-    <div id="quiz"></div>
+  <div class="card">
+    <div class="sim-head"><h3>👾 Derrote o Gênio do Mal!</h3><button class="b" id="gFsBtn">⛶ Tela cheia</button></div>
+    <p class="note">Cada acerto tira 1 de vida do Gênio: acertem <b>6 de 8</b> para derrotá-lo. Com <b>3 erros</b>, ele vence. Atalhos: <span class="kbd">1</span> <span class="kbd">2</span> <span class="kbd">3</span> para responder, <span class="kbd">Enter</span> para avançar e <span class="kbd">M</span> para ligar/desligar o som 🔊.</p>
+    <div class="arcade" id="arcade">
+      <div class="hud">
+        <div><div class="px" id="gBossLbl">GÊNIO DO MAL</div><div class="hp" id="gHP"></div></div>
+        <div class="mid px" id="gRound">PRONTOS?</div>
+        <div style="text-align:right"><div class="px">VOCÊS</div><div class="hearts" id="gHearts"></div></div>
+        <div class="hudbtns"><button class="fsx" id="gSnd" title="Desligar o som (M)" aria-label="Ligar ou desligar o som">🔊</button><button class="fsx" id="gFsX" title="Tela cheia" aria-label="Tela cheia">⛶</button></div>
+      </div>
+      <div class="arena">
+        <div class="say" id="gSay" aria-live="polite"></div>
+        <div class="squad" id="gSquad"></div>
+        <div class="banner" id="gBanner"></div>
+      </div>
+      <div class="dialog">
+        <div class="q" id="gQ"></div>
+        <div class="ans" id="gOpts"></div>
+        <div class="exp" id="gExp" aria-live="polite"></div>
+        <button class="pxbtn go" id="gNext">► COMEÇAR</button>
+      </div>
+      <div class="flash" id="gFlash"></div>
+      <div class="fx" id="gFx"></div>
+    </div>
   </div>
 
   <div class="card">
@@ -914,7 +1035,7 @@ function go(i){page=Math.max(0,Math.min(pages.length-1,+i));pages.forEach((p,k)=
   window.scrollTo({top:0,behavior:'instant'});try{history.replaceState(null,'','#p'+page);}catch(e){}
   requestAnimationFrame(()=>{onShow[page]&&onShow[page]();window.dispatchEvent(new Event('resize'));});}
 document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go);});
-document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')go(page+1);if(e.key==='ArrowLeft')go(page-1);});
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(typeof bKey==='function'&&bKey(e))return;if(e.key==='ArrowRight')go(page+1);if(e.key==='ArrowLeft')go(page-1);});
 $('#themeBtn').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';redrawAll();};
 const redrawers=[];function redrawAll(){redrawers.forEach(f=>{try{f();}catch(e){/* gráfico de uma parte ainda não aberta */}});}
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',redrawAll);
@@ -1341,7 +1462,7 @@ function sigIdle(){sig.plot.draw({lines:[{f:ySig,color:css('--real'),w:2,dash:[6
 redrawers.push(()=>sig.plot.draw());
 onShow[4]=()=>{if(!car.reg)carRun();else carDraw();if(!sig.plot.layers)sigIdle();DUELS.forEach((d,i)=>duelDraw(i));};
 
-/* ======================= 5. árvore de decisão + quiz ======================= */
+/* ======================= 5. árvore de decisão + chefão (Gênio do Mal) ======================= */
 const TREE={
   start:{q:'O problema é simples? (uma reta, uma fórmula conhecida)',o:[['Sim','r_simple'],['Não','law']]},
   law:{q:'Existe uma lei física confiável (uma equação) para o fenômeno?',o:[['Sim','few'],['Não','data']]},
@@ -1358,18 +1479,152 @@ function treeShow(id){const n=TREE[id];$('#treePath').textContent=treePath.join(
   $('#treeBody').innerHTML=`<div class="q">${n.q}</div><div class="btns">${n.o.map((o,i)=>`<button class="b${i?'':' primary'}" data-t="${o[1]}" data-l="${o[0]}">${o[0]}</button>`).join('')}</div>`;}
 $('#treeBody').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;treePath.push(b.dataset.l);treeShow(b.dataset.t);};
 $('#treeReset').onclick=()=>{treePath=[];treeShow('start');};treeShow('start');
-const QUIZ=[
- ['Por que a ReLU não serve para a PINN da mola?',['Porque a 2ª derivada dela é zero','Porque ela é lenta demais'],0,'A equação da mola usa a aceleração (2ª derivada). Com ReLU ela é sempre zero.'],
- ['O que a PINN tem a mais que uma rede comum?',['Mais camadas e neurônios','A equação física dentro da conta do erro'],1,'A arquitetura pode ser a mesma; muda a <i>loss</i> (a conta do erro).'],
- ['Na simulação do café, por que a rede comum errou?',['Ela continuou a tendência de queda fora dos dados','Ela tinha poucos neurônios'],0,'Fora dos dados a rede só extrapola a tendência — é o principal limite (Q25).'],
- ['Pela Navalha de Ockham, qual modelo escolher?',['O maior possível, por segurança','O mais simples que resolve bem'],1,'Modelos grandes demais decoram o ruído (<i>overfitting</i>).'],
- ['No carrinho em linha reta, quem venceu?',['A regressão linear','A PINN'],0,'2 parâmetros bastam, e a PINN foi puxada pela física errada (Q26).'],
- ['Quando a PINN pode atrapalhar?',['Quando a equação física dada a ela está errada','Quando temos poucos sensores'],0,'A PINN confia na equação. Equação errada = previsão errada.']];
-let score=0;
-$('#quiz').innerHTML=QUIZ.map((q,i)=>`<div class="item" data-i="${i}"><b>${i+1}. ${q[0]}</b><div class="opts">${q[1].map((o,j)=>`<button data-j="${j}">${o}</button>`).join('')}</div><div class="fb"></div></div>`).join('');
-$('#quiz').onclick=e=>{const b=e.target.closest('button');if(!b)return;const it=b.closest('.item');if(it.dataset.done)return;it.dataset.done=1;const q=QUIZ[+it.dataset.i],j=+b.dataset.j;
-  b.classList.add(j===q[2]?'ok':'no');it.querySelectorAll('button')[q[2]].classList.add('ok');if(j===q[2])score++;$('#score').textContent=score;
-  it.querySelector('.fb').innerHTML=(j===q[2]?'✅ Isso! ':'❌ Quase. ')+q[3];};
+// ---- chefão 8-bit: derrote o Gênio do Mal (6 acertos vencem; 3 erros perdem) ----
+const PXPAL={"k": "#1a0f2e", "p": "#9b5de5", "P": "#6c3bb0", "t": "#d62839", "T": "#8e1628", "y": "#ffd54a", "R": "#ff2a4a", "r": "#ff3355", "w": "#ffffff", "g": "#2a1440", "l": "#c7a6ff"};
+const PXFR={"A": ["........kkkk........", "......kkttttkk......", ".....kttttttttk.....", "....ktttyyyytttk....", "....kttyRRRRyttk....", "....ktttyyyytttk....", "...kTTTTTTTTTTTTk...", "...kkkkkkkkkkkkkk...", "...kppppppppppppk...", "..ykpkkppppppkkpky..", "..ykppkkppppkkppky..", ".kkkpprrpppprrppk...", "kyykppwrppppwrppk...", "kppkPppppkkppppPk...", "kppkPpgggggggggPk...", ".kpkPpgwgwgwgwgPk...", ".kpkkPPpgggggpPPk...", ".kpPkkPPPPPPPPkk....", "..kpPk.kkPPkk.......", "...kpPk.kkkk........", "....kpPkppppppkk....", "....kPpyppppykPpk...", "....kPpyppppypkPpk..", ".....kPyyyyyyPkpyk..", ".....kppppppppkkk...", "......kpppppPk......", ".......kpppPk.......", ".......kppPk........", "........kpPk........", ".........kpk........", "..........kpk.......", "...........kk......."], "B": ["........kkkk........", "......kkttttkk......", ".....kttttttttk.....", "....ktttyyyytttk....", "....kttyRRRRyttk....", "....ktttyyyytttk....", "...kTTTTTTTTTTTTk...", "...kkkkkkkkkkkkkk...", "...kppppppppppppk...", "..ykpkkppppppkkpky..", "..ykppkkppppkkppky..", "...kpprrpppprrppkkk.", "...kppwrppppwrppkyyk", "...kPppppkkppppPkppk", "...kPpgggggggggPkppk", "...kPpgwgwgwgwgPkpk.", "....kPPpgggggpPPkpk.", "....kkPPPPPPPPkkPpk.", ".......kkPPkk.kPpk..", "........kkkk.kPpk...", "....kkppppppkPpk....", "...kpPkyppppypPk....", "..kpPkpyppppypPk....", "..kypkPyyyyyyPk.....", "...kkkppppppppk.....", "......kpppppPk......", ".......kpppPk.......", "........kppPk.......", "........kpPk........", "........kpk.........", ".......kpk..........", "......kk............"], "C": ["........kkkk........", "......kkttttkk......", ".....kttttttttk.....", "....ktttyyyytttk....", "....kttyRRRRyttk....", "....ktttyyyytttk....", "...kTTTTTTTTTTTTk...", "...kkkkkkkkkkkkkk...", "...kppppppppppppk...", "..ykpkkppppppkkpky..", "..ykppkkppppkkppky..", ".kkkppppppppppppkkk.", "kyykpkkpppppkkppkyyk", "kppkPppppkkppppPkppk", "kppkPpgggggggggPkppk", ".kpkPpgwgwgwgwgPkpk.", ".kpkkPPpgrrrgpPPkpk.", ".kpPkkPPPPPPPPkkPpk.", "..kpPk.kkPPkk.kPpk..", "...kpPk.kkkk.kPpk...", "....kpPkppppkPpk....", "....kPpyppppypPk....", "....kPpyppppypPk....", ".....kPyyyyyyPk.....", ".....kppppppppk.....", "......kpppppPk......", ".......kpppPk.......", ".......kppPk........", "........kpPk........", ".........kpk........", "..........kpk.......", "...........kk......."], "D": ["........kkkk........", "......kkttttkk......", ".....kttttttttk.....", "....ktttyyyytttk....", "....kttyRRRRyttk....", "....ktttyyyytttk....", "...kTTTTTTTTTTTTk...", "...kkkkkkkkkkkkkk...", "...kppppppppppppk...", "..ykpkkppppppkkpky..", "..ykppkkppppkkppky..", "...kppppppppppppk...", ".kkkpkkpppppkkppkkk.", "kyykPppppkkppppPkyyk", "kppkPpgggggggggPkppk", "kppkPpgwgwgwgwgPkppk", ".kpkkPPpgrrrgpPPkpk.", ".kpkkkPPPPPPPPkkkpk.", ".kpPk..kkPPkk..kPpk.", "..kpPk..kkkk..kPpk..", "...kpPkppppppkPpk...", "....kpPkppppkPpk....", "....kPpyppppypPk....", ".....kPyyyyyyPk.....", ".....kppppppppk.....", "......kpppppPk......", ".......kpppPk.......", "........kppPk.......", "........kpPk........", "........kpk.........", ".......kpk..........", "......kk............"]};
+const GQ=[
+ ['Converter uma temperatura de °C para °F.','simples','Já existe fórmula pronta: F = 1,8 × C + 32. Uma rede só ia gastar mais e errar um pouquinho.'],
+ ['Dizer se tem um gato numa foto.','rede','Não existe fórmula para "gato", mas existem milhões de fotos de exemplo. Caso clássico de rede (uma CNN).'],
+ ['Prever onde um pêndulo vai estar daqui a 10 s, com só 5 medições e a lei do pêndulo conhecida.','pinn','Poucos dados + física confiável: a equação preenche onde não há sensor. É a nossa mola!'],
+ ['Traduzir mensagens do português para o inglês.','rede','Linguagem não tem fórmula, e há textos de sobra para aprender. É o terreno dos Transformers.'],
+ ['Calcular onde cai uma bola de canhão, sem resistência do ar e sem atrito, sabendo a velocidade e o ângulo de lançamento.','simples','Pegadinha! A lei é conhecida e temos todos os dados: a fórmula do lançamento oblíquo dá a resposta exata. Rede ou PINN só aproximariam o que a física já resolve.'],
+ ['Um banco precisa decidir quem recebe crédito, e cada recusa tem que ser explicada ao cliente com clareza, sem margem para contestação.','simples','Uma rede até preveria bem o risco, mas é caixa-preta: não dá para mostrar exatamente por que ela recusou. Como a decisão precisa ser explicável (a LGPD dá ao cliente o direito de conhecer os critérios e pedir revisão), um modelo interpretável, como uma árvore de decisão, é a escolha certa.'],
+ ['Prever a produção de um poço de petróleo com uma equação que os engenheiros sabem estar errada para aquela rocha, mas com muitos dados de produção.','rede','Pegadinha! Com a física errada, a PINN seria puxada para o lugar errado (Q26). Como há muitos dados, a rede comum aprende direto deles.'],
+ ['Descobrir o atrito de uma mola a partir de poucas medições: conhecemos a equação da mola, mas não o valor do atrito.','pinn','Fórmula e solver precisam do atrito pronto. A PINN trata o atrito como mais um número a aprender e o descobre a partir das medições, obedecendo à equação (o chamado problema inverso).']];
+
+const GOPT=[['rede','🧠 REDE NEURAL','muitos dados, sem fórmula'],['pinn','🌀 PINN','poucos dados + lei física'],['simples','📏 MAIS SIMPLES','fórmula, reta ou modelo explicável']];
+const BSAY={intro:'MUAHAHA! Eu sou o GÊNIO DO MAL! Acertem 6 de 8 e eu sumo. Errem 3 e esta apresentação é MINHA!',
+  introTrio:'MUAHAHA! Somos os GÊNIOS DO MAL! Cada um aguenta 2 golpes: acertem 6 de 8 para derrubar os três. Errem 3 e a apresentação é NOSSA!',
+  ko:['Caiu um! Mas ainda sobramos nós! 😠','Vocês vão pagar por isso!','Nããão! Perdemos um gênio! 😱','Calma, foi só um passo do gradiente! 😤','Um a menos… mas a loss continua alta!','Ele volta na próxima época! 🔁'],winTrio:'NÃÃÃÃO! Derrotados pela Navalha de Ockham…',
+  ask:['Duvido que acertem essa! 😈','Essa é difícil, hein?','Pensem rápido, mortais!','Hmm… e agora?','Nem o ChatGPT acerta essa! 🤖','Tic-tac, tic-tac… ⏰','Usem a Navalha de Ockham… se souberem! 🪒','Essa vale o semestre! 📚','Errem, por favor! 🙏','Plateia, ajudem eles, coitados! 😏','Essa até meu gato acertaria… com uma CNN! 🐱','Quero ver essa cara de dúvida! 🤨'],
+  hurt:['AI! Como vocês sabiam?!','ARGH! Sorte de principiante!','Isso doeu! 😵','Impossível!!','Isso não estava no meu dataset! 📉','Meu gradiente sumiu! 😵‍💫','Quem ensinou isso pra vocês?!','Ai! Bem na minha loss!','Foi chute! Só pode ter sido chute!'],
+  laugh:['HA HA HA! Errado!','MUAHAHA! Mais um pra mim!','Fácil demais! 😈','HA! Nem a Navalha de Ockham salva!','Errou! Volta pra Parte 1! 📖','HA! Isso foi pura extrapolação!','Nem com λ = 100 vocês acertam! 😈','MUAHAHA! Overfitting detectado!','HA! Até uma rede sem treino acertava essa!','Caixa-preta é a cabeça de vocês! 🖤','Vocês decoraram o ruído! 😂','Com esse erro, nem a validação salva vocês!','Precisam de mais dados… e de mais estudo! 📦'],
+  win:'NÃÃÃÃO! Derrotado pela Navalha de Ockham…',lose:'MUAHAHA! Voltem quando souberem a Q26!'};
+const NEED=6,LIVES=3,B={i:-1,hits:0,miss:0,res:[],busy:false,over:false};
+const pick=a=>a[Math.floor(Math.random()*a.length)],sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function pxSVG(rows,cls,pal=PXPAL){let r='';rows.forEach((row,y)=>{let x=0;while(x<row.length){const c=row[x];if(c==='.'){x++;continue;}let e=x;while(e<row.length&&row[e]===c)e++;
+  r+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${pal[c]}"/>`;x=e;}});
+  return `<svg class="${cls}" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges" aria-hidden="true">${r}</svg>`;}
+const HEART=['.rr.rr.','rwrrrrr','rrrrrrr','.rrrrr.','..rrr..','...r...'];
+const arc=$('#arcade'),fxL=$('#gFx');
+// no desktop (≥700px): 3 gênios inspirados no grupo, 2 de vida cada; no celular: o gênio roxo sozinho, com 6
+const TRIO=[{"fr": {"A": ["....kkkkkkkkkkkk....", "..kkhhHhhhHhhhHhkk..", ".khhHhhhhHhhhhHhhhk.", "khhhhHhhhhhHhhhhHhhk", "khHhhhhHhhhhhHhhhhhk", "khhhHhhhhhHhhhhhHhhk", "khhhhhhhhhhhhhhhhhhk", "khhhsssssssssssshhhk", "khhhsssssssssssshhhk", "khhhskkssssssskkshhk", ".khhsoooossoooosshk.", ".kkhsoesossoesosshk.", "kssksoooossoooosshk.", "kcckSssssSSssssShk..", "kcckbbssbbbbssbbhk..", ".kckbbbgwwwwgbbbbk..", ".kckbbbbggggbbbbk...", ".kcCkbbbbbbbbbbbk...", "..kcCkbbbbbbbbbBk...", "...kcCkBbbbbbBkk....", "....kcCkcccccckk....", "....kCccccccckCck...", "....kCcccccccckCck..", ".....kCccccccCkcsk..", ".....kvvvvvvvvkkk...", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "B": ["....kkkkkkkkkkkk....", "..kkhhHhhhHhhhHhkk..", ".khhHhhhhHhhhhHhhhk.", "khhhhHhhhhhHhhhhHhhk", "khHhhhhHhhhhhHhhhhhk", "khhhHhhhhhHhhhhhHhhk", "khhhhhhhhhhhhhhhhhhk", "khhhsssssssssssshhhk", "khhhsssssssssssshhhk", "khhhskkssssssskkshhk", ".khhsoooossoooosshk.", ".khhsoesossoesosskk.", ".khhsoooossooooskssk", "..khSssssSSssssSkcck", "..khbbssbbbbssbbkcck", "..kbbbbgwwwwgbbbkck.", "...kbbbbggggbbbbkck.", "...kbbbbbbbbbbbkCck.", "....kBbbbbbbbbkCck..", ".....kkBbbbbbkCck...", "....kkcccccckCck....", "...kcCkcccccccCk....", "..kcCkccccccccCk....", "..ksckCccccccCk.....", "...kkkvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"], "C": ["....kkkkkkkkkkkk....", "..kkhhHhhhHhhhHhkk..", ".khhHhhhhHhhhhHhhhk.", "khhhhHhhhhhHhhhhHhhk", "khHhhhhHhhhhhHhhhhhk", "khhhHhhhhhHhhhhhHhhk", "khhhhhhhhhhhhhhhhhhk", "khhhsssssssssssshhhk", "khhhsssssssssssshhhk", "khhhskkssssssskkshhk", ".khhsoooossoooosshk.", ".kkhsoesossoesosskk.", "kssksoooossooooskssk", "kcckSssssSSssssSkcck", "kcckbbssbbbbssbbkcck", ".kckbbbgwwwwgbbbkck.", ".kckbbbgrrrrgbbbkck.", ".kcCkbbbggggbbbkCck.", "..kcCkbbbbbbbbkCck..", "...kcCkBbbbbbkCck...", "....kcCkcccckCck....", "....kCccccccccCk....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "D": ["....kkkkkkkkkkkk....", "..kkhhHhhhHhhhHhkk..", ".khhHhhhhHhhhhHhhhk.", "khhhhHhhhhhHhhhhHhhk", "khHhhhhHhhhhhHhhhhhk", "khhhHhhhhhHhhhhhHhhk", "khhhhhhhhhhhhhhhhhhk", "khhhsssssssssssshhhk", "khhhsssssssssssshhhk", "khhhskkssssssskkshhk", ".khhsoooossoooosshk.", ".khhsoesossoesosshk.", ".kkhsoooossoooosskk.", "ksskSssssSSssssSkssk", "kcckbbssbbbbssbbkcck", "kcckbbbgwwwwgbbbkcck", ".kckbbbgrrrrgbbbkck.", ".kckbbbbggggbbbbkck.", ".kcCkBbbbbbbbbbkCck.", "..kcCkkBbbbbbBkCck..", "...kcCkcccccckCck...", "....kcCkcccckCck....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"]}, "pal": {"k": "#1a0f2e", "v": "#9b5de5", "V": "#6c3bb0", "h": "#1c1410", "H": "#3d2c22", "s": "#9a6648", "S": "#77492f", "b": "#1f1712", "B": "#120c09", "o": "#b9b9b9", "e": "#120c09", "g": "#4a1a14", "w": "#ffffff", "c": "#c4552d", "C": "#923a1b", "r": "#e0475a"}}, {"fr": {"A": ["....................", "....................", "......kkkkkkkk......", "....kkhhhhhhhhkk....", "...khhhhHhhhhhhhk...", "...khhhHhhhhhHhhk...", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "...khsshhhhhhsshk...", "...ksskksssskkssk...", ".kkksoooossoooosk...", "kssksoesossoesosk...", "kccksoooossoooosk...", "kccksssssSSssssskk..", ".kcksssgwwwwgsssk...", ".kckssssggggssssk...", ".kcCkSssssssssSk....", "..kcCkkSssssSkk.....", "...kcCkkssssk.......", "....kcCkwkkwwwkk....", "....kCcwwccwwkCck...", "....kCcccccccckCck..", ".....kCccccccCkcsk..", ".....kvvvvvvvvkkk...", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "B": ["....................", "....................", "......kkkkkkkk......", "....kkhhhhhhhhkk....", "...khhhhHhhhhhhhk...", "...khhhHhhhhhHhhk...", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "...khsshhhhhhsshk...", "...ksskksssskkssk...", "...ksoooossooooskkk.", "...ksoesossoesoskssk", "...ksoooossooooskcck", "...ksssssSSssssskcck", "...ksssgwwwwgssskck.", "...kssssggggsssskck.", "....kSssssssssSkCck.", ".....kkSssssSkkCck..", ".......ksssskkCck...", "....kkwwwkkwkCck....", "...kcCkwwccwwcCk....", "..kcCkccccccccCk....", "..ksckCccccccCk.....", "...kkkvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"], "C": ["....................", "....................", "......kkkkkkkk......", "....kkhhhhhhhhkk....", "...khhhhHhhhhhhhk...", "...khhhHhhhhhHhhk...", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "...khsshhhhhhsshk...", "...ksskksssskkssk...", ".kkksoooossooooskkk.", "kssksoesossoesoskssk", "kccksoooossooooskcck", "kccksssssSSssssskcck", ".kcksssgwwwwgssskck.", ".kckssgrrrrrrgsskck.", ".kcCkSssggggssSkCck.", "..kcCkkSssssSkkCck..", "...kcCkksssskkCck...", "....kcCkwkkwkCck....", "....kCcwwccwwcCk....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "D": ["....................", "....................", "......kkkkkkkk......", "....kkhhhhhhhhkk....", "...khhhhHhhhhhhhk...", "...khhhHhhhhhHhhk...", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "..khhhhhhhhhhhhhhk..", "...khsshhhhhhsshk...", "...ksskksssskkssk...", "...ksoooossoooosk...", ".kkksoesossoesoskkk.", "kssksoooossooooskssk", "kccksssssSSssssskcck", "kccksssgwwwwgssskcck", ".kckssgrrrrrrgsskck.", ".kckkSssggggssSkkck.", ".kcCkkkSssssSkkkCck.", "..kcCk.kssssk.kCck..", "...kcCkwwkkwwkCck...", "....kcCkwccwkCck....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"]}, "pal": {"k": "#1a0f2e", "v": "#9b5de5", "V": "#6c3bb0", "h": "#1a1514", "H": "#3b3230", "s": "#efc6a4", "S": "#d4a07c", "o": "#8f8f8f", "e": "#2a1a14", "g": "#6a2227", "w": "#ffffff", "c": "#22222a", "C": "#111116", "r": "#e0475a"}}, {"fr": {"A": ["....................", "....................", "....................", "......kkkkkkkk......", "....kkssLLssssskk...", "...ksssLLssssssk....", "...kssLssssssssk....", "...kssssssssssssk...", "...kssssssssssssk...", "...ksbbbssssbbbsk...", "...ksseessssseesk...", ".kkkSssssssssssSk...", "kssksssssSSsssssk...", "kcckbsssbbbbsssbsk..", "kcckbbbbbbbbbbbbk...", ".kckbbbbgwwgbbbbk...", ".kckbbbbbbbbbbbbbk..", ".kcCkbbbbbbbbbbbbk..", "..kcCkbbbbbbbbbbk...", "...kcCkbbbbbbbbBk...", "....kcCkcccccckk....", "....kCccccccckCck...", "....kCcccccccckCck..", ".....kCccccccCkcsk..", ".....kvvvvvvvvkkk...", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "B": ["....................", "....................", "....................", "......kkkkkkkk......", "....kkssLLssssskk...", "...ksssLLssssssk....", "...kssLssssssssk....", "...kssssssssssssk...", "...kssssssssssssk...", "...ksbbbssssbbbsk...", "...ksseessssseesk...", "...kSssssssssssSkkk.", "..kssssssSSssssskssk", "..ksbsssbbbbsssbkcck", "...kbbbbbbbbbbbbkcck", "...kbbbbgwwgbbbbkck.", "..kbbbbbbbbbbbbbkck.", "..kbbbbbbbbbbbbkCck.", "...kbbbbbbbbbbkCck..", "....kBbbbbbbbkCck...", "....kkcccccckCck....", "...kcCkcccccccCk....", "..kcCkccccccccCk....", "..ksckCccccccCk.....", "...kkkvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"], "C": ["....................", "....................", "....................", "......kkkkkkkk......", "....kkssLLssssskk...", "...ksssLLssssssk....", "...kssLssssssssk....", "...kssssssssssssk...", "...kssssssssssssk...", "...ksbbbssssbbbsk...", "...ksseessssseesk...", ".kkkSssssssssssSkkk.", "kssksssssSSssssskssk", "kcckbsssbbbbsssbkcck", "kcckbbbbbbbbbbbbkcck", ".kckbbbgwwwwgbbbkck.", ".kckbbbgrrrrgbbbkck.", ".kcCkbbbggggbbbkCck.", "..kcCkbbbbbbbbkCck..", "...kcCkbbbbbbkCck...", "....kcCkcccckCck....", "....kCccccccccCk....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", ".......kvvVk........", "........kvVk........", ".........kvk........", "..........kvk.......", "...........kk......."], "D": ["....................", "....................", "....................", "......kkkkkkkk......", "....kkssLLssssskk...", "...ksssLLssssssk....", "...kssLssssssssk....", "...kssssssssssssk...", "...kssssssssssssk...", "...ksbbbssssbbbsk...", "...ksseessssseesk...", "...kSssssssssssSk...", ".kkssssssSSssssskkk.", "ksskbsssbbbbsssbkssk", "kcckbbbbbbbbbbbbkcck", "kcckbbbgwwwwgbbbkcck", ".kckbbbgrrrrgbbbkck.", ".kckbbbbggggbbbbkck.", ".kcCkbbbbbbbbbbkCck.", "..kcCkbbbbbbbbkCck..", "...kcCkcccccckCck...", "....kcCkcccckCck....", "....kCccccccccCk....", ".....kCccccccCk.....", ".....kvvvvvvvvk.....", "......kvvvvvVk......", ".......kvvvVk.......", "........kvvVk.......", "........kvVk........", "........kvk.........", ".......kvk..........", "......kk............"]}, "pal": {"k": "#1a0f2e", "v": "#9b5de5", "V": "#6c3bb0", "s": "#e8b391", "S": "#c88a68", "L": "#fbd9c0", "b": "#1b1512", "B": "#0f0b09", "e": "#1b1512", "g": "#4a1a14", "w": "#ffffff", "c": "#33414f", "C": "#232d38", "r": "#e0475a"}}];
+const wideMQ=matchMedia('(min-width:700px)');let BOSSES=[];
+function bBuild(){const trio=wideMQ.matches;B.trio=trio;
+  const defs=trio?TRIO.map(t=>({fr:t.fr,pal:t.pal,hp:2})):[{fr:PXFR,pal:PXPAL,hp:NEED}];
+  $('#gSquad').innerHTML=defs.map((d,k)=>`<div class="bwrap"><div class="pips">${'<i></i>'.repeat(d.hp)}</div><div class="sprite" style="--d:${(-k*.23).toFixed(2)}s">${['A','B','C','D'].map(f=>pxSVG(d.fr[f],'f'+f,d.pal)).join('')}</div><div class="floor"></div></div>`).join('');
+  $('#gSquad').classList.toggle('trio',trio);$('#gBossLbl').textContent=trio?'GÊNIOS DO MAL':'GÊNIO DO MAL';
+  BOSSES=[...$$('#gSquad .bwrap')].map((el,k)=>({el,spr:el.querySelector('.sprite'),hp:defs[k].hp}));}
+const alive=()=>BOSSES.filter(b=>b.hp>0);
+function bPips(){BOSSES.forEach(b=>b.el.querySelectorAll('.pips i').forEach((i,k)=>i.classList.toggle('lost',k>=b.hp)));}
+async function bKO(b){b.spr.classList.add('ko');await sleep(RM?0:950);fxBoom(rel(b.spr));sfx('boom');b.spr.classList.add('gone');b.el.classList.add('down');}
+function bHUD(){$('#gHP').innerHTML=Array.from({length:NEED},(_,k)=>`<i class="${k>=NEED-B.hits?'lost':''}"></i>`).join('');
+  $('#gHearts').innerHTML=Array.from({length:LIVES},(_,k)=>pxSVG(HEART,k>=LIVES-B.miss?'lost':'',{r:'#ff3355',w:'#ffd0d8'})).join('');
+  $('#gRound').textContent=B.i<0?'PRONTOS?':B.over?(B.hits>=NEED?'VITÓRIA!':'GAME OVER'):`PERGUNTA ${B.i+1}/${GQ.length}`;}
+function bButtons(dis){return GOPT.map((o,k)=>`<button class="pxbtn c-${o[0]}" data-a="${o[0]}"${dis?' disabled':''}><span class="k">${k+1}</span>${o[1]}<small>${o[2]}</small></button>`).join('');}
+function rel(el){const a=arc.getBoundingClientRect(),r=el.getBoundingClientRect();return{x:r.left-a.left+r.width/2,y:r.top-a.top+r.height/2};}
+function fxShot(from,to,color,size,dur){if(RM)return Promise.resolve();const d=document.createElement('div');
+  d.style.cssText=`width:${size}px;height:${size}px;background:${color};box-shadow:0 0 0 3px #000,0 0 16px ${color}`;fxL.appendChild(d);
+  const a=d.animate([{transform:`translate(${from.x-size/2}px,${from.y-size/2}px) rotate(0deg)`},{transform:`translate(${to.x-size/2}px,${to.y-size/2}px) rotate(180deg)`}],{duration:dur,easing:'steps(7)',fill:'forwards'});
+  return Promise.race([a.finished.catch(()=>{}),sleep(dur+200)]).then(()=>d.remove());}
+function fxText(at,txt){if(RM)return;const d=document.createElement('div');d.className='dmg';d.textContent=txt;fxL.appendChild(d);
+  d.animate([{transform:`translate(${at.x-20}px,${at.y-60}px)`,opacity:1},{transform:`translate(${at.x-20}px,${at.y-120}px)`,opacity:0}],{duration:900,easing:'steps(6)',fill:'forwards'}).finished.then(()=>d.remove());}
+function fxBoom(at){if(RM)return;const cols=['#9b5de5','#6c3bb0','#d62839','#ffd54a','#ff3355','#c7a6ff','#ffffff'];
+  for(let k=0;k<44;k++){const d=document.createElement('div'),z=6+Math.random()*10,ang=Math.random()*Math.PI*2,dist=60+Math.random()*190;
+    d.style.cssText=`width:${z}px;height:${z}px;background:${pick(cols)}`;fxL.appendChild(d);
+    d.animate([{transform:`translate(${at.x}px,${at.y}px)`,opacity:1},{transform:`translate(${at.x+Math.cos(ang)*dist}px,${at.y+Math.sin(ang)*dist+60}px)`,opacity:0}],{duration:900+Math.random()*500,easing:'steps(10)',fill:'forwards'}).finished.then(()=>d.remove());}}
+function cls(el,c,ms){el.classList.remove(c);el.getBoundingClientRect();el.classList.add(c);if(ms)setTimeout(()=>el.classList.remove(c),ms);}
+function bRender(){bHUD();const n=GQ.length;$('#gOpts').classList.toggle('intro',B.i<0);$('#gNext').hidden=false;
+  if(B.i<0){$('#gSay').textContent=B.trio?BSAY.introTrio:BSAY.intro;$('#gQ').innerHTML='Para cada problema, escolham a melhor ferramenta:';$('#gOpts').innerHTML=bButtons(true);
+    $('#gExp').innerHTML='';
+    $('#gNext').textContent='► COMEÇAR';return;}
+  $('#gSay').textContent=pick(BSAY.ask);$('#gQ').innerHTML=GQ[B.i][0];$('#gOpts').innerHTML=bButtons(false);$('#gExp').innerHTML='';$('#gNext').hidden=true;}
+// ---- som 8-bit: trilha chiptune original e efeitos, gerados pelo navegador (Web Audio) — sem arquivos e sem direitos autorais ----
+const SND={ctx:null,master:null,mus:null,sfx:null,noise:null,on:true,timer:null,step:0,next:0};
+try{SND.on=localStorage.getItem('genioSom')!=='off';}catch(e){}
+function sndInit(){if(SND.ctx){if(SND.ctx.state==='suspended')SND.ctx.resume();return;}
+  const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;const c=new AC();SND.ctx=c;
+  SND.master=c.createGain();SND.master.gain.value=SND.on?1:0;SND.master.connect(c.destination);
+  SND.mus=c.createGain();SND.mus.gain.value=.1;SND.mus.connect(SND.master);SND.sfx=c.createGain();SND.sfx.gain.value=.24;SND.sfx.connect(SND.master);
+  const b=c.createBuffer(1,Math.floor(c.sampleRate*.6),c.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;SND.noise=b;}
+const NF=n=>440*Math.pow(2,(n-69)/12),sNow=()=>SND.ctx.currentTime;
+function tone(t,f,dur,type,vol,dest,slide){const c=SND.ctx,o=c.createOscillator(),g=c.createGain();o.type=type||'square';o.frequency.setValueAtTime(f,t);
+  if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+  o.connect(g);g.connect(dest||SND.sfx);o.start(t);o.stop(t+dur+.03);}
+function hiss(t,dur,vol,dest,hp){const c=SND.ctx,src=c.createBufferSource(),g=c.createGain();src.buffer=SND.noise;let n=src;
+  if(hp){const f=c.createBiquadFilter();f.type='highpass';f.frequency.value=hp;src.connect(f);n=f;}
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);n.connect(g);g.connect(dest||SND.sfx);src.start(t);src.stop(t+dur+.03);}
+// trilha do vilão: Lá menor, Am–F–G–E, 132 bpm, em colcheias (números MIDI; 0 = pausa)
+const MUS_BPM=132,MUS_E8=60/MUS_BPM/2;
+const MUS_LEAD=[69,72,76,81,79,76,72,76, 77,76,72,69,72,77,76,72, 74,79,83,79,74,71,74,79, 76,80,83,80,76,74,72,71,
+                81,0,79,76,0,72,76,0, 77,0,76,72,0,69,72,0, 79,0,83,79,0,74,79,0, 80,0,83,0,80,0,76,0];
+const MUS_BASS=[45,0,45,0,52,0,45,0, 41,0,41,0,48,0,41,0, 43,0,43,0,50,0,43,0, 40,0,40,0,47,0,40,0];
+function musStep(t,i){const k=i%MUS_LEAD.length,b=MUS_BASS[i%MUS_BASS.length];
+  if(MUS_LEAD[k])tone(t,NF(MUS_LEAD[k]),MUS_E8*.85,'square',.22,SND.mus);
+  if(b)tone(t,NF(b),MUS_E8*1.8,'triangle',.7,SND.mus);
+  hiss(t,.035,k%2?.06:.1,SND.mus,7000);if(k%4===0)tone(t,160,.13,'sine',.8,SND.mus,45);if(k%8===4)hiss(t,.12,.18,SND.mus,1800);}
+function musStart(){if(!SND.ctx||SND.timer)return;SND.next=sNow()+.06;SND.step=0;
+  SND.timer=setInterval(()=>{while(SND.next<sNow()+.15){musStep(SND.next,SND.step++);SND.next+=MUS_E8;}},30);}
+function musStop(){clearInterval(SND.timer);SND.timer=null;}
+const SFX={
+  click(){tone(sNow(),880,.06,'square',.3);},
+  shoot(){tone(sNow(),420,.14,'square',.35,null,1400);},
+  hit(){const t=sNow();tone(t,1000,.18,'square',.45,null,160);hiss(t,.14,.4,null,1500);tone(t+.09,520,.1,'square',.3);},
+  laugh(){const t=sNow();[0,.15,.3].forEach((d,k)=>tone(t+d,360-k*35,.12,'square',.35,null,260-k*30));},
+  fire(){const t=sNow();hiss(t,.4,.35,null,300);tone(t,320,.35,'sawtooth',.3,null,70);},
+  heart(){const t=sNow();tone(t,660,.1,'square',.35);tone(t+.11,415,.2,'square',.35);},
+  boom(){const t=sNow();hiss(t,1,.6);tone(t,130,.7,'sine',.7,null,30);},
+  win(){const t=sNow()+.3;[72,76,79,84].forEach((n,k)=>tone(t+k*.12,NF(n),.14,'square',.32));tone(t+.5,NF(84),.7,'square',.3);tone(t+.5,NF(76),.7,'triangle',.5);tone(t+.5,NF(48),.7,'triangle',.6);},
+  lose(){const t=sNow()+.3;[71,70,69,68].forEach((n,k)=>tone(t+k*.3,NF(n),.32,'square',.32));tone(t+1.2,NF(45),1,'triangle',.6);}};
+function sfx(n){if(!SND.ctx||!SND.on)return;try{SFX[n]();}catch(e){}}
+function sndToggle(){sndInit();SND.on=!SND.on;try{localStorage.setItem('genioSom',SND.on?'on':'off');}catch(e){}
+  if(SND.master)SND.master.gain.setTargetAtTime(SND.on?1:0,sNow(),.03);sndLabel();if(SND.on&&B.i>=0&&!B.over)musStart();}
+function sndLabel(){$('#gSnd').textContent=SND.on?'🔊':'🔇';$('#gSnd').title=SND.on?'Desligar o som (M)':'Ligar o som (M)';}
+async function bAnswer(btn){if(B.busy||B.over||B.i<0||B.res[B.i]!==undefined)return;B.busy=true;
+  const q=GQ[B.i],ok=btn.dataset.a===q[1];B.res[B.i]=ok;
+  $$('#gOpts .pxbtn').forEach(x=>{x.disabled=true;if(x.dataset.a===q[1])x.classList.add('ok');else if(x===btn)x.classList.add('no');});
+  if(ok){B.hits++;const t=alive()[0];sfx('shoot');await fxShot(rel(btn),rel(t.spr),'#ffd54a',16,380);sfx('hit');cls(t.spr,'hit',520);fxText(rel(t.spr),'-1');t.hp--;bPips();
+    if(t.hp===0&&B.hits<NEED){$('#gSay').textContent=pick(BSAY.ko);await sleep(450);await bKO(t);}else $('#gSay').textContent=pick(BSAY.hurt);}
+  else{B.miss++;const us=alive(),shooter=pick(us);us.forEach(b=>b.spr.classList.add('laugh'));sfx('laugh');$('#gSay').textContent=pick(BSAY.laugh);const h=$$('#gHearts svg')[LIVES-B.miss];
+    sfx('fire');await fxShot(rel(shooter.spr),rel(h),'#ff5a2a',20,420);sfx('heart');cls(arc,'shake',380);cls($('#gFlash'),'on',380);setTimeout(()=>{if(!B.over)us.forEach(b=>b.spr.classList.remove('laugh'));},1300);}
+  bHUD();$('#gExp').innerHTML=(ok?'✔ ':'✘ ')+q[2];
+  if(B.hits>=NEED){B.over=true;await sleep(700);await bWin();}
+  else if(B.miss>=LIVES){B.over=true;await sleep(700);bLose();}
+  else{$('#gNext').textContent=B.i===GQ.length-1?'► RESULTADO':'► PRÓXIMA';$('#gNext').hidden=false;}
+  B.busy=false;if(!$('#gNext').hidden)$('#gNext').focus({preventScroll:true});}
+async function bWin(){bHUD();musStop();$('#gSay').textContent=B.trio?BSAY.winTrio:BSAY.win;const left=BOSSES.filter(b=>!b.spr.classList.contains('gone'));
+  left.forEach(b=>b.spr.classList.add('ko'));await sleep(RM?0:950);left.forEach(b=>{fxBoom(rel(b.spr));b.spr.classList.add('gone');b.el.classList.add('down');});sfx('boom');sfx('win');
+  arc.classList.add('won');$('#gBanner').textContent='VITÓRIA!';$('#gOpts').innerHTML='';
+  $('#gQ').innerHTML=`Vocês acertaram ${B.hits} de ${B.i+1} e derrotaram ${B.trio?'os Gênios':'o Gênio'} do Mal! 🏆`;
+  $('#gExp').innerHTML='Regra de ouro: <b>muitos dados, sem fórmula</b> → rede neural · <b>poucos dados + lei física</b> → PINN · <b>fórmula, reta ou precisa explicar</b> → algo mais simples.';
+  $('#gNext').textContent='↺ JOGAR DE NOVO';$('#gNext').hidden=false;}
+function bLose(){bHUD();musStop();sfx('laugh');sfx('lose');alive().forEach(b=>{b.spr.classList.remove('laugh');b.spr.getBoundingClientRect();b.spr.classList.add('laugh','boss');});arc.classList.add('lost');$('#gBanner').textContent='GAME OVER';$('#gOpts').innerHTML='';
+  $('#gSay').textContent=BSAY.lose;$('#gQ').innerHTML=`${B.trio?'Os Gênios venceram':'O Gênio venceu'}… Vocês acertaram ${B.hits}, e precisavam de ${NEED}.`;
+  $('#gExp').innerHTML='Dica: <b>muitos dados, sem fórmula</b> → rede neural · <b>poucos dados + lei física</b> → PINN · <b>fórmula, reta ou precisa explicar</b> → algo mais simples.';
+  $('#gNext').textContent='↺ TENTAR DE NOVO';$('#gNext').hidden=false;}
+function bReset(){Object.assign(B,{i:-1,hits:0,miss:0,res:[],busy:false,over:false});bBuild();arc.classList.remove('won','lost');fxL.innerHTML='';}
+$('#gOpts').onclick=e=>{const b=e.target.closest('.pxbtn');if(b&&!b.disabled)bAnswer(b);};
+$('#gNext').onclick=()=>{if(B.busy)return;sndInit();sfx('click');if(B.over){bReset();B.i=0;}else B.i++;bRender();musStart();};
+$('#gSnd').onclick=sndToggle;sndLabel();
+// a música para ao sair da Parte 5 ou da aba, e volta se o jogo estiver em andamento
+{const goPrev=go;go=function(i){goPrev(i);if(page!==5)musStop();else if(B.i>=0&&!B.over&&SND.on)musStart();};}
+document.addEventListener('visibilitychange',()=>{if(!SND.ctx)return;if(document.hidden)SND.ctx.suspend();else SND.ctx.resume();});
+// tela cheia: API de fullscreen; se não existir (ex.: iPhone), vira uma camada fixa
+const isFs=()=>document.fullscreenElement===arc||document.webkitFullscreenElement===arc||arc.classList.contains('fs-fallback');
+function fsToggle(){if(isFs()){if(document.fullscreenElement)document.exitFullscreen();else if(document.webkitFullscreenElement)document.webkitExitFullscreen();arc.classList.remove('fs-fallback');fsLabel();return;}
+  const req=arc.requestFullscreen||arc.webkitRequestFullscreen;if(req){try{const r=req.call(arc);if(r&&r.catch)r.catch(()=>{arc.classList.add('fs-fallback');fsLabel();});}catch(e){arc.classList.add('fs-fallback');}}else arc.classList.add('fs-fallback');fsLabel();}
+function fsLabel(){const on=isFs();$('#gFsBtn').textContent=on?'✕ Sair da tela cheia':'⛶ Tela cheia';$('#gFsX').textContent=on?'✕':'⛶';}
+$('#gFsBtn').onclick=fsToggle;$('#gFsX').onclick=fsToggle;
+document.addEventListener('fullscreenchange',fsLabel);document.addEventListener('webkitfullscreenchange',fsLabel);
+// teclado: 1/2/3 respondem; Enter avança (em tela cheia); Esc sai da camada fixa; setas não trocam de parte durante o jogo em tela cheia
+function bKey(e){const fs=isFs();if(!fs&&page!==5)return false;
+  if(e.key==='Escape'&&arc.classList.contains('fs-fallback')){fsToggle();return true;}
+  if(e.key==='m'||e.key==='M'){sndToggle();return true;}
+  if(['1','2','3'].includes(e.key)){const b=$$('#gOpts .pxbtn')[+e.key-1];if(b&&!b.disabled)b.click();return true;}
+  if(fs&&(e.key==='Enter'||e.key===' ')){e.preventDefault();if(!$('#gNext').hidden)$('#gNext').click();return true;}
+  return fs&&(e.key==='ArrowRight'||e.key==='ArrowLeft');}
+bBuild();bRender();
+wideMQ.addEventListener('change',()=>{if(B.i<0){bBuild();bRender();}});
 
 /* ======================= ajuda "?" ao lado de cada simulação ======================= */
 const HELP={
