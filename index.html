@@ -1496,7 +1496,7 @@ const GOPT=[['rede','🧠 REDE NEURAL','muitos dados, sem fórmula'],['pinn','�
 const BSAY={intro:'MUAHAHA! Eu sou o GÊNIO DO MAL! Acertem 6 de 8 e eu sumo. Errem 3 e esta apresentação é MINHA!',
   introTrio:'MUAHAHA! Somos os GÊNIOS DO MAL! Cada um aguenta 2 golpes: acertem 6 de 8 para derrubar os três. Errem 3 e a apresentação é NOSSA!',
   ko:['Caiu um! Mas ainda sobramos nós! 😠','Vocês vão pagar por isso!','Nããão! Perdemos um gênio! 😱','Calma, foi só um passo do gradiente! 😤','Um a menos… mas a loss continua alta!','Ele volta na próxima época! 🔁'],winTrio:'NÃÃÃÃO! Derrotados pela Navalha de Ockham…',
-  ask:['Duvido que acertem essa! 😈','Essa é difícil, hein?','Pensem rápido, mortais!','Hmm… e agora?','Nem o ChatGPT acerta essa! 🤖','Tic-tac, tic-tac… ⏰','Usem a Navalha de Ockham… se souberem! 🪒','Essa vale o semestre! 📚','Errem, por favor! 🙏','Plateia, ajudem eles, coitados! 😏','Essa até meu gato acertaria… com uma CNN! 🐱','Quero ver essa cara de dúvida! 🤨'],
+  ask:['Duvido que alguém aí acerte essa! 😈','Essa é difícil até pra quem prestou atenção… imagina pra vocês! 😏','Pensem rápido, mortais… se é que conseguem! 🧠','E agora? Vão chutar de novo? 🎯','Nem o ChatGPT acerta essa! 🤖','Tic-tac… até o Runge-Kutta é mais rápido que vocês! ⏰','Usem a Navalha de Ockham… se souberem! 🪒','Essa vale o semestre… e vocês vão de exame! 📚','Errem, por favor! 🙏','Plateia, ajudem eles, coitados! 😏','Essa até meu gato acertaria… com uma CNN! 🐱','Quero ver essa cara de dúvida! 🤨'],
   hurt:['AI! Como vocês sabiam?!','ARGH! Sorte de principiante!','Isso doeu! 😵','Impossível!!','Isso não estava no meu dataset! 📉','Meu gradiente sumiu! 😵‍💫','Quem ensinou isso pra vocês?!','Ai! Bem na minha loss!','Foi chute! Só pode ter sido chute!'],
   laugh:['HA HA HA! Errado!','MUAHAHA! Mais um pra mim!','Fácil demais! 😈','HA! Nem a Navalha de Ockham salva!','Errou! Volta pra Parte 1! 📖','HA! Isso foi pura extrapolação!','Nem com λ = 100 vocês acertam! 😈','MUAHAHA! Overfitting detectado!','HA! Até uma rede sem treino acertava essa!','Caixa-preta é a cabeça de vocês! 🖤','Vocês decoraram o ruído! 😂','Com esse erro, nem a validação salva vocês!','Precisam de mais dados… e de mais estudo! 📦'],
   win:'NÃÃÃÃO! Derrotado pela Navalha de Ockham…',lose:'MUAHAHA! Voltem quando souberem a Q26!'};
@@ -1516,6 +1516,8 @@ function bBuild(){const trio=wideMQ.matches;B.trio=trio;
   $('#gSquad').classList.toggle('trio',trio);$('#gBossLbl').textContent=trio?'GÊNIOS DO MAL':'GÊNIO DO MAL';
   BOSSES=[...$$('#gSquad .bwrap')].map((el,k)=>({el,spr:el.querySelector('.sprite'),hp:defs[k].hp}));}
 const alive=()=>BOSSES.filter(b=>b.hp>0);
+// ordem dos golpes: esquerda, direita e, por último, o do meio (o balão de fala fica sempre sobre alguém de pé)
+function bTarget(){const order=B.trio?[0,2,1]:[0];return BOSSES[order.find(k=>BOSSES[k].hp>0)];}
 function bPips(){BOSSES.forEach(b=>b.el.querySelectorAll('.pips i').forEach((i,k)=>i.classList.toggle('lost',k>=b.hp)));}
 async function bKO(b){b.spr.classList.add('ko');await sleep(RM?0:950);fxBoom(rel(b.spr));sfx('boom');b.spr.classList.add('gone');b.el.classList.add('down');}
 function bHUD(){$('#gHP').innerHTML=Array.from({length:NEED},(_,k)=>`<i class="${k>=NEED-B.hits?'lost':''}"></i>`).join('');
@@ -1583,7 +1585,7 @@ function sndLabel(){$('#gSnd').textContent=SND.on?'🔊':'🔇';$('#gSnd').title
 async function bAnswer(btn){if(B.busy||B.over||B.i<0||B.res[B.i]!==undefined)return;B.busy=true;
   const q=GQ[B.i],ok=btn.dataset.a===q[1];B.res[B.i]=ok;
   $$('#gOpts .pxbtn').forEach(x=>{x.disabled=true;if(x.dataset.a===q[1])x.classList.add('ok');else if(x===btn)x.classList.add('no');});
-  if(ok){B.hits++;const t=alive()[0];sfx('shoot');await fxShot(rel(btn),rel(t.spr),'#ffd54a',16,380);sfx('hit');cls(t.spr,'hit',520);fxText(rel(t.spr),'-1');t.hp--;bPips();
+  if(ok){B.hits++;const t=bTarget();sfx('shoot');await fxShot(rel(btn),rel(t.spr),'#ffd54a',16,380);sfx('hit');cls(t.spr,'hit',520);fxText(rel(t.spr),'-1');t.hp--;bPips();
     if(t.hp===0&&B.hits<NEED){$('#gSay').textContent=pick(BSAY.ko);await sleep(450);await bKO(t);}else $('#gSay').textContent=pick(BSAY.hurt);}
   else{B.miss++;const us=alive(),shooter=pick(us);us.forEach(b=>b.spr.classList.add('laugh'));sfx('laugh');$('#gSay').textContent=pick(BSAY.laugh);const h=$$('#gHearts svg')[LIVES-B.miss];
     sfx('fire');await fxShot(rel(shooter.spr),rel(h),'#ff5a2a',20,420);sfx('heart');cls(arc,'shake',380);cls($('#gFlash'),'on',380);setTimeout(()=>{if(!B.over)us.forEach(b=>b.spr.classList.remove('laugh'));},1300);}
@@ -1595,11 +1597,11 @@ async function bAnswer(btn){if(B.busy||B.over||B.i<0||B.res[B.i]!==undefined)ret
 async function bWin(){bHUD();musStop();$('#gSay').textContent=B.trio?BSAY.winTrio:BSAY.win;const left=BOSSES.filter(b=>!b.spr.classList.contains('gone'));
   left.forEach(b=>b.spr.classList.add('ko'));await sleep(RM?0:950);left.forEach(b=>{fxBoom(rel(b.spr));b.spr.classList.add('gone');b.el.classList.add('down');});sfx('boom');sfx('win');
   arc.classList.add('won');$('#gBanner').textContent='VITÓRIA!';$('#gOpts').innerHTML='';
-  $('#gQ').innerHTML=`Vocês acertaram ${B.hits} de ${B.i+1} e derrotaram ${B.trio?'os Gênios':'o Gênio'} do Mal! 🏆`;
+  $('#gQ').innerHTML=`Vocês derrotaram ${B.trio?'os Gênios':'o Gênio'} do Mal na pergunta ${B.i+1} de ${GQ.length}, com ${B.hits} acertos! 🏆`;
   $('#gExp').innerHTML='Regra de ouro: <b>muitos dados, sem fórmula</b> → rede neural · <b>poucos dados + lei física</b> → PINN · <b>fórmula, reta ou precisa explicar</b> → algo mais simples.';
   $('#gNext').textContent='↺ JOGAR DE NOVO';$('#gNext').hidden=false;}
 function bLose(){bHUD();musStop();sfx('laugh');sfx('lose');alive().forEach(b=>{b.spr.classList.remove('laugh');b.spr.getBoundingClientRect();b.spr.classList.add('laugh','boss');});arc.classList.add('lost');$('#gBanner').textContent='GAME OVER';$('#gOpts').innerHTML='';
-  $('#gSay').textContent=BSAY.lose;$('#gQ').innerHTML=`${B.trio?'Os Gênios venceram':'O Gênio venceu'}… Vocês acertaram ${B.hits}, e precisavam de ${NEED}.`;
+  $('#gSay').textContent=BSAY.lose;$('#gQ').innerHTML=`${B.trio?'Os Gênios venceram':'O Gênio venceu'}… Vocês acertaram ${B.hits} de ${B.i+1} perguntas, e precisavam de ${NEED} acertos.`;
   $('#gExp').innerHTML='Dica: <b>muitos dados, sem fórmula</b> → rede neural · <b>poucos dados + lei física</b> → PINN · <b>fórmula, reta ou precisa explicar</b> → algo mais simples.';
   $('#gNext').textContent='↺ TENTAR DE NOVO';$('#gNext').hidden=false;}
 function bReset(){Object.assign(B,{i:-1,hits:0,miss:0,res:[],busy:false,over:false});bBuild();arc.classList.remove('won','lost');fxL.innerHTML='';}
