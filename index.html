@@ -1501,6 +1501,11 @@ const BSAY={intro:'MUAHAHA! Eu sou o GÊNIO DO MAL! Acertem 6 de 8 e eu sumo. Er
   laugh:['HA HA HA! Errado!','MUAHAHA! Mais um pra mim!','Fácil demais! 😈','HA! Nem a Navalha de Ockham salva!','Errou! Volta pra Parte 1! 📖','HA! Isso foi pura extrapolação!','Nem com λ = 100 vocês acertam! 😈','MUAHAHA! Overfitting detectado!','HA! Até uma rede sem treino acertava essa!','Caixa-preta é a cabeça de vocês! 🖤','Vocês decoraram o ruído! 😂','Com esse erro, nem a validação salva vocês!','Precisam de mais dados… e de mais estudo! 📦'],
   win:'NÃÃÃÃO! Derrotado pela Navalha de Ockham…',lose:'MUAHAHA! Voltem quando souberem a Q26!'};
 const NEED=6,LIVES=3,B={i:-1,hits:0,miss:0,res:[],busy:false,over:false};
+// falas: cada lista vira um "saco embaralhado" — todas saem antes de repetir, e nunca a mesma duas vezes seguidas
+const SAYBAG=new Map();let lastSaid='';
+function say(list){let bag=SAYBAG.get(list);if(!bag||!bag.length){bag=[...list].sort(()=>Math.random()-.5);
+    if(bag.length>1&&bag[bag.length-1]===lastSaid)bag.unshift(bag.pop());SAYBAG.set(list,bag);}
+  lastSaid=bag.pop();return lastSaid;}
 const pick=a=>a[Math.floor(Math.random()*a.length)],sleep=ms=>new Promise(r=>setTimeout(r,ms));
 function pxSVG(rows,cls,pal=PXPAL){let r='';rows.forEach((row,y)=>{let x=0;while(x<row.length){const c=row[x];if(c==='.'){x++;continue;}let e=x;while(e<row.length&&row[e]===c)e++;
   r+=`<rect x="${x}" y="${y}" width="${e-x}" height="1" fill="${pal[c]}"/>`;x=e;}});
@@ -1540,7 +1545,7 @@ function bRender(){bHUD();const n=GQ.length;$('#gOpts').classList.toggle('intro'
   if(B.i<0){$('#gSay').textContent=B.trio?BSAY.introTrio:BSAY.intro;$('#gQ').innerHTML='Para cada problema, escolham a melhor ferramenta:';$('#gOpts').innerHTML=bButtons(true);
     $('#gExp').innerHTML='';
     $('#gNext').textContent='► COMEÇAR';return;}
-  $('#gSay').textContent=pick(BSAY.ask);$('#gQ').innerHTML=GQ[B.i][0];$('#gOpts').innerHTML=bButtons(false);$('#gExp').innerHTML='';$('#gNext').hidden=true;}
+  $('#gSay').textContent=say(BSAY.ask);$('#gQ').innerHTML=GQ[B.i][0];$('#gOpts').innerHTML=bButtons(false);$('#gExp').innerHTML='';$('#gNext').hidden=true;}
 // ---- som 8-bit: trilha chiptune original e efeitos, gerados pelo navegador (Web Audio) — sem arquivos e sem direitos autorais ----
 const SND={ctx:null,master:null,mus:null,sfx:null,noise:null,on:true,timer:null,step:0,next:0};
 try{SND.on=localStorage.getItem('genioSom')!=='off';}catch(e){}
@@ -1586,8 +1591,8 @@ async function bAnswer(btn){if(B.busy||B.over||B.i<0||B.res[B.i]!==undefined)ret
   const q=GQ[B.i],ok=btn.dataset.a===q[1];B.res[B.i]=ok;
   $$('#gOpts .pxbtn').forEach(x=>{x.disabled=true;if(x.dataset.a===q[1])x.classList.add('ok');else if(x===btn)x.classList.add('no');});
   if(ok){B.hits++;const t=bTarget();sfx('shoot');await fxShot(rel(btn),rel(t.spr),'#ffd54a',16,380);sfx('hit');cls(t.spr,'hit',520);fxText(rel(t.spr),'-1');t.hp--;bPips();
-    if(t.hp===0&&B.hits<NEED){$('#gSay').textContent=pick(BSAY.ko);await sleep(450);await bKO(t);}else $('#gSay').textContent=pick(BSAY.hurt);}
-  else{B.miss++;const us=alive(),shooter=pick(us);us.forEach(b=>b.spr.classList.add('laugh'));sfx('laugh');$('#gSay').textContent=pick(BSAY.laugh);const h=$$('#gHearts svg')[LIVES-B.miss];
+    if(t.hp===0&&B.hits<NEED){$('#gSay').textContent=say(BSAY.ko);await sleep(450);await bKO(t);}else $('#gSay').textContent=say(BSAY.hurt);}
+  else{B.miss++;const us=alive(),shooter=pick(us);us.forEach(b=>b.spr.classList.add('laugh'));sfx('laugh');$('#gSay').textContent=say(BSAY.laugh);const h=$$('#gHearts svg')[LIVES-B.miss];
     sfx('fire');await fxShot(rel(shooter.spr),rel(h),'#ff5a2a',20,420);sfx('heart');cls(arc,'shake',380);cls($('#gFlash'),'on',380);setTimeout(()=>{if(!B.over)us.forEach(b=>b.spr.classList.remove('laugh'));},1300);}
   bHUD();$('#gExp').innerHTML=(ok?'✔ ':'✘ ')+q[2];
   if(B.hits>=NEED){B.over=true;await sleep(700);await bWin();}
